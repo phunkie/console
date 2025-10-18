@@ -1,0 +1,87 @@
+#!/usr/bin/env php
+<?php
+
+/*
+ * This file is part of Phunkie, library with functional structures for PHP.
+ *
+ * (c) Marcello Duarte <marcello.duarte@gmail.com>
+ *
+ * For the full copyright and license information, please view the LICENSE
+ * file that was distributed with this source code.
+ */
+
+use Phunkie\Console\Types\ReplSession;
+use Phunkie\Effect\IO\IO;
+use Phunkie\Effect\IO\IOApp;
+use function Phunkie\Console\Repl\replLoop;
+use function Phunkie\Console\Functions\{setColors, printBanner, loadHistory, saveHistory};
+
+(function (){
+    $autoloadPaths = [
+        __DIR__ . '/../vendor/autoload.php',
+        __DIR__ . '/../../../autoload.php',
+        __DIR__ . '/../../../../autoload.php'
+    ];
+
+    $autoloaded = false;
+    foreach ($autoloadPaths as $autoloadPath) {
+        if (file_exists($autoloadPath)) {
+            require_once $autoloadPath;
+            $autoloaded = true;
+            break;
+        }
+    }
+
+    if (!$autoloaded) {
+        fwrite(STDERR, "Error: Could not find autoloader. Please run 'composer install'.\n");
+        exit(1);
+    }
+
+    class PhunkieConsole extends IOApp {
+        public function run(?array $args = []): IO
+        {
+            // Parse command-line arguments
+            $colorEnabled = $this->hasColorFlag($args);
+
+            // Create initial session
+            $initialSession = ReplSession::empty();
+            $pair = setColors($colorEnabled)->run($initialSession);
+            $session = $pair->_1;
+
+            // Load command history from previous sessions
+            // Print banner and start REPL loop
+            return loadHistory()
+                ->flatMap(fn() => printBanner($colorEnabled))
+                ->flatMap(fn() => replLoop($session));
+        }
+
+        private function hasColorFlag(?array $args): bool
+        {
+            return $args !== null && in_array('-c', $args);
+        }
+    }
+
+    // Setup signal handlers for graceful exit (Ctrl-C)
+    if (function_exists('pcntl_signal')) {
+        // Enable async signals so handlers are called automatically
+        pcntl_async_signals(true);
+
+        pcntl_signal(SIGINT, function() {
+            // Save history before exiting
+            saveHistory()->unsafeRun();
+            echo "\n\nbye \\o\n";
+            exit(0);
+        });
+    }
+
+    // Register shutdown function to save history on normal exit
+    register_shutdown_function(function() {
+        saveHistory()->unsafeRun();
+    });
+
+    $app = new PhunkieConsole();
+
+    $app->run($_SERVER['argv'])->unsafeRun();
+})();
+
+

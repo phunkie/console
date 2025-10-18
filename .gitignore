@@ -1,0 +1,7 @@
+.vscode/
+.specs/
+vendor/
+.phpunit.cache
+phpunit.xml
+.claude
+.specs
