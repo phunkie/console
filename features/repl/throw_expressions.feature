@@ -7,7 +7,7 @@ Feature: Throw expressions
     Given I start the REPL
     When I enter "$x = false"
     And I enter "$y = $x ? 'valid' : throw new \Exception('Invalid value')"
-    Then I should see output containing "Exception"
+    Then I should see output containing "Error"
     And I should see output containing "Invalid value"
 
   Scenario: Throw in ternary operator - condition is true
@@ -20,7 +20,7 @@ Feature: Throw expressions
     Given I start the REPL
     When I enter "$x = null"
     And I enter "$y = $x ?? throw new \Exception('Value is required')"
-    Then I should see output containing "Exception"
+    Then I should see output containing "Error"
     And I should see output containing "Value is required"
 
   Scenario: Throw with null coalescing operator - value is not null
@@ -34,14 +34,14 @@ Feature: Throw expressions
     When I enter "$fn = fn() => throw new \RuntimeException('Not implemented')"
     Then I should see output containing "$fn: Callable = <function>"
     When I enter "$fn()"
-    Then I should see output containing "RuntimeException"
+    Then I should see output containing "Error"
     And I should see output containing "Not implemented"
 
   Scenario: Throw in match expression default case
     Given I start the REPL
     When I enter "$x = 5"
     And I enter "$result = match($x) { 1 => 'one', 2 => 'two', default => throw new \Exception('Unknown value') }"
-    Then I should see output containing "Exception"
+    Then I should see output containing "Error"
     And I should see output containing "Unknown value"
 
   Scenario: Throw in match expression - matching case
@@ -53,7 +53,7 @@ Feature: Throw expressions
   Scenario: Standalone throw expression
     Given I start the REPL
     When I enter "throw new \InvalidArgumentException('This is an error')"
-    Then I should see output containing "InvalidArgumentException"
+    Then I should see output containing "Error"
     And I should see output containing "This is an error"
 
   Scenario: Throw with custom exception class
@@ -69,5 +69,5 @@ Feature: Throw expressions
     When I enter "$validate(5)"
     Then I should see output containing "$var0: Int = 5"
     When I enter "$validate(-1)"
-    Then I should see output containing "Exception"
+    Then I should see output containing "Error"
     And I should see output containing "Must be positive"

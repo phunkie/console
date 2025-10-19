@@ -96,7 +96,7 @@ class ReplSteps implements Context
             '/^\s*(abstract\s+)?(class|trait|interface|enum)\s+\w+/im',
             '/^\s*function\s+\w+\s*\(/im',
             '/^\s*#\[\w+\]\s*$/im', // Attribute on its own line (precedes class definition)
-            '/\bthrow\s+new\b/i', // Throw expressions with new keyword
+            // Removed throw pattern - DirectReplManager handles throw expressions correctly
             '/\.\.\.\\\$/i', // Array spreading (spread operator with literal $)
             '/\[[^\]]*=>[^\]]*\]/i', // Associative arrays (any key => value in array)
         ];

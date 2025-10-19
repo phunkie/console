@@ -79,7 +79,9 @@ class DirectReplManager
             return $fullOutput;
         } catch (\Throwable $e) {
             ob_end_clean();
-            $errorOutput = $echoedInput . "Error: " . $e->getMessage() . "\n";
+            // Get the exception class name to match ProcessManager output format
+            $className = (new \ReflectionClass($e))->getShortName();
+            $errorOutput = $echoedInput . $className . ": " . $e->getMessage() . "\n";
             $this->output .= $errorOutput;
             return $errorOutput;
         }
