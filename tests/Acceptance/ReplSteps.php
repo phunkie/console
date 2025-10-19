@@ -97,8 +97,8 @@ class ReplSteps implements Context
             '/^\s*function\s+\w+\s*\(/im',
             '/^\s*#\[\w+\]\s*$/im', // Attribute on its own line (precedes class definition)
             // Removed throw pattern - DirectReplManager handles throw expressions correctly
+            // Removed associative array pattern - DirectReplManager handles these correctly
             '/\.\.\.\\\$/i', // Array spreading (spread operator with literal $)
-            '/\[[^\]]*=>[^\]]*\]/i', // Associative arrays (any key => value in array)
         ];
 
         foreach ($patterns as $pattern) {
