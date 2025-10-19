@@ -16,109 +16,51 @@ use Behat\Step\Then;
 use Behat\Step\When;
 use Behat\Step\Given;
 use Behat\Behat\Context\Context;
-use Tests\Acceptance\Support\ReplProcessManager;
 use Tests\Acceptance\Support\DirectReplManager;
+use Tests\Acceptance\Support\ReplProcessManager;
 use Tests\Acceptance\Support\ReplOutputReader;
 use Tests\Acceptance\Support\TestFileManager;
 use Tests\Acceptance\Support\StringHelper;
 
 class ReplSteps implements Context
 {
-    private ReplProcessManager $processManager;
     private DirectReplManager $directManager;
+    private ReplProcessManager $processManager;
     private TestFileManager $fileManager;
     private string $output = '';
     private array $inputs = [];
+    private array $sentInputs = []; // Track all inputs sent so far for replay when switching managers
     private int $variableCount = 0;
     private bool $hasExited = false;
-    private bool $useProcessManager = true; // Use process manager for now (direct manager has edge cases)
+    private bool $useProcessManager = false;
 
     public function __construct()
     {
         $projectRoot = __DIR__ . '/../../';
-        $this->processManager = new ReplProcessManager($projectRoot);
         $this->directManager = new DirectReplManager();
+        $this->processManager = new ReplProcessManager($projectRoot);
         $this->fileManager = new TestFileManager($projectRoot);
     }
 
     private function startRepl(string $command = 'php bin/phunkie'): void
     {
-        if ($command !== 'php bin/phunkie') {
-            // Non-default command means we need to test the actual process
+        if ($command !== 'php bin/phunkie' && $command !== 'php bin/phunkie -c') {
+            // Non-standard command means we need to test the actual process
             $this->useProcessManager = true;
         }
 
         if ($this->useProcessManager) {
             $this->processManager->start($command);
-            // Read initial banner and prompt
-            $this->readOutput();
+            $stdout = $this->processManager->getStdout();
+            if ($stdout !== null) {
+                $newOutput = ReplOutputReader::readOutput($stdout);
+                $this->output .= $newOutput;
+            }
         } else {
-            // Use direct manager
             $colorEnabled = str_contains($command, '-c');
             $this->directManager->start($colorEnabled);
             $this->output = $this->directManager->getOutput();
         }
-    }
-
-    private function readOutput(): string
-    {
-        if (!$this->useProcessManager) {
-            return '';
-        }
-
-        $stdout = $this->processManager->getStdout();
-        if ($stdout === null) {
-            return '';
-        }
-
-        $newOutput = ReplOutputReader::readOutput($stdout);
-        $this->output .= $newOutput;
-        return $newOutput;
-    }
-
-    private function waitForPrompt(float $timeout = 0.15): bool
-    {
-        if (!$this->useProcessManager) {
-            return true; // Direct manager doesn't need to wait
-        }
-
-        $stdout = $this->processManager->getStdout();
-        if ($stdout === null) {
-            return false;
-        }
-
-        $buffer = '';
-        $startTime = microtime(true);
-
-        while ((microtime(true) - $startTime) < $timeout) {
-            // Use ReplOutputReader to check if data is available
-            $read = [$stdout];
-            $write = null;
-            $except = null;
-            $result = stream_select($read, $write, $except, 0, 10000);
-
-            if ($result === false) {
-                return false;
-            }
-
-            if ($result > 0) {
-                $chunk = stream_get_contents($stdout);
-                if ($chunk !== false && $chunk !== '') {
-                    $buffer .= $chunk;
-                    $this->output .= $chunk;
-
-                    // Check if we found a prompt using the helper
-                    if (str_ends_with($buffer, 'phunkie > ') ||
-                        str_ends_with($buffer, 'phunkie { ')) {
-                        return true;
-                    }
-                }
-            }
-
-            usleep(1000);
-        }
-
-        return !empty($buffer);
     }
 
     private function sendInput(string $input): void
@@ -126,30 +68,39 @@ class ReplSteps implements Context
         // Check if input defines a class/function/trait/interface/enum
         // If so, switch to process manager to avoid redeclaration errors
         if (!$this->useProcessManager && $this->definesUserType($input)) {
-            // Switch to process manager mid-test
-            $this->useProcessManager = true;
-            // Start the process with current output state
-            $this->processManager->start();
-            $this->readOutput(); // Read banner
+            $this->switchToProcessManager();
         }
 
         if ($this->useProcessManager) {
             $this->processManager->sendInput($input);
-            // Wait for the prompt using efficient stream_select
-            $this->waitForPrompt();
+            $stdout = $this->processManager->getStdout();
+            if ($stdout !== null) {
+                $newOutput = ReplOutputReader::readOutput($stdout);
+                $this->output .= $newOutput;
+            }
         } else {
-            $output = $this->directManager->sendInput($input);
-            $this->output .= $output;
+            $newOutput = $this->directManager->sendInput($input);
+            $this->output .= $newOutput;
         }
+
+        // Track this input after sending it, for potential replay when switching managers later
+        $this->sentInputs[] = $input;
     }
 
     private function definesUserType(string $input): bool
     {
-        // Check if input defines a class, function, trait, interface, or enum
-        // These cause redeclaration errors when using the direct manager
+        // Switch to process manager for:
+        // 1. Class/function/trait/interface/enum DEFINITIONS (to avoid redeclaration)
+        // 2. Specific patterns with known output differences between direct and process managers
         $patterns = [
-            '/^\s*(class|trait|interface|enum)\s+\w+/i',
-            '/^\s*function\s+\w+\s*\(/i',
+            '/^\s*(abstract\s+)?(class|trait|interface|enum)\s+\w+/im',
+            '/^\s*function\s+\w+\s*\(/im',
+            '/^\s*#\[\w+\]\s*$/im', // Attribute on its own line (precedes class definition)
+            '/^\$undefined\b/i', // Undefined variable error
+            '/\bthrow\b/i', // Throw expressions (keyword anywhere)
+            '/\[.*=>.*,\s*\]/i', // Associative arrays with trailing commas
+            '/\.\.\.\\\$/i', // Array spreading (spread operator with literal $)
+            '/\["[^"]*"\s*=>/i', // Associative arrays with string keys (output format differs)
         ];
 
         foreach ($patterns as $pattern) {
@@ -159,6 +110,30 @@ class ReplSteps implements Context
         }
 
         return false;
+    }
+
+    private function switchToProcessManager(): void
+    {
+        // We need to switch from direct manager to process manager mid-test
+        // Start the process and discard its initial output (we already have it from direct manager)
+        $this->useProcessManager = true;
+        $this->processManager->start();
+
+        // Drain the initial banner/prompt
+        $stdout = $this->processManager->getStdout();
+        if ($stdout !== null) {
+            ReplOutputReader::readOutput($stdout);
+        }
+
+        // Replay all previous inputs to bring the process manager to the same state as direct manager
+        foreach ($this->sentInputs as $previousInput) {
+            $this->processManager->sendInput($previousInput);
+            $stdout = $this->processManager->getStdout();
+            if ($stdout !== null) {
+                // Drain the output but don't add to $this->output since we already have it from direct manager
+                ReplOutputReader::readOutput($stdout);
+            }
+        }
     }
 
     private function cleanup(): void
@@ -173,16 +148,17 @@ class ReplSteps implements Context
 
         $this->output = '';
         $this->inputs = [];
+        $this->sentInputs = [];
         $this->variableCount = 0;
         $this->hasExited = false;
-        $this->useProcessManager = true; // Use process manager (direct manager has edge cases)
+        $this->useProcessManager = false;
     }
 
     #[Given('I start the REPL')]
     public function iStartTheRepl(): void
     {
         // Don't clean up files yet - they may be needed
-        // Only cleanup the managers
+        // Reset whichever manager we're using
         if ($this->useProcessManager) {
             $this->processManager->terminate();
         } else {
@@ -191,11 +167,19 @@ class ReplSteps implements Context
 
         $this->output = '';
         $this->inputs = [];
+        $this->sentInputs = [];
         $this->variableCount = 0;
         $this->hasExited = false;
-        $this->useProcessManager = true; // Use process manager (direct manager has edge cases)
+        $this->useProcessManager = $this->shouldUseProcessManager(); // Check if we need process manager
 
         $this->startRepl();
+    }
+
+    private function shouldUseProcessManager(): bool
+    {
+        // For now, default to direct manager
+        // We'll switch to process manager when we detect specific patterns during sendInput
+        return false;
     }
 
     #[Given('I run :command')]

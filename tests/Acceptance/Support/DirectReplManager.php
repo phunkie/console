@@ -1,5 +1,4 @@
 <?php
-
 /*
  * This file is part of Phunkie, library with functional structures for PHP.
  *
