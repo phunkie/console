@@ -96,11 +96,9 @@ class ReplSteps implements Context
             '/^\s*(abstract\s+)?(class|trait|interface|enum)\s+\w+/im',
             '/^\s*function\s+\w+\s*\(/im',
             '/^\s*#\[\w+\]\s*$/im', // Attribute on its own line (precedes class definition)
-            '/^\$undefined\b/i', // Undefined variable error
-            '/\bthrow\b/i', // Throw expressions (keyword anywhere)
-            '/\[.*=>.*,\s*\]/i', // Associative arrays with trailing commas
+            '/\bthrow\s+new\b/i', // Throw expressions with new keyword
             '/\.\.\.\\\$/i', // Array spreading (spread operator with literal $)
-            '/\["[^"]*"\s*=>/i', // Associative arrays with string keys (output format differs)
+            '/\[[^\]]*=>[^\]]*\]/i', // Associative arrays (any key => value in array)
         ];
 
         foreach ($patterns as $pattern) {

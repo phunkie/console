@@ -48,6 +48,9 @@ class DirectReplManager
 
     public function sendInput(string $input): string
     {
+        // Echo the input to match ProcessManager behavior (which shows what was typed)
+        $echoedInput = $input . "\n";
+
         // Capture output using output buffering
         ob_start();
 
@@ -57,23 +60,26 @@ class DirectReplManager
             if ($result instanceof ExitRepl) {
                 echo "\nbye \\o\n";
                 $output = ob_get_clean();
-                $this->output .= $output;
-                return $output;
+                $fullOutput = $echoedInput . $output;
+                $this->output .= $fullOutput;
+                return $fullOutput;
             }
 
             if ($result instanceof ContinueRepl) {
                 $this->session = $result->session;
                 $output = ob_get_clean();
-                $this->output .= $output;
-                return $output;
+                $fullOutput = $echoedInput . $output;
+                $this->output .= $fullOutput;
+                return $fullOutput;
             }
 
             $output = ob_get_clean();
-            $this->output .= $output;
-            return $output;
+            $fullOutput = $echoedInput . $output;
+            $this->output .= $fullOutput;
+            return $fullOutput;
         } catch (\Throwable $e) {
             ob_end_clean();
-            $errorOutput = "Error: " . $e->getMessage() . "\n";
+            $errorOutput = $echoedInput . "Error: " . $e->getMessage() . "\n";
             $this->output .= $errorOutput;
             return $errorOutput;
         }
