@@ -173,6 +173,26 @@ class ReplSteps implements Context
         $this->startRepl();
     }
 
+    #[Given('I start the REPL with colors')]
+    public function iStartTheReplWithColors(): void
+    {
+        // Reset whichever manager we're using
+        if ($this->useProcessManager) {
+            $this->processManager->terminate();
+        } else {
+            $this->directManager->reset();
+        }
+
+        $this->output = '';
+        $this->inputs = [];
+        $this->sentInputs = [];
+        $this->variableCount = 0;
+        $this->hasExited = false;
+        $this->useProcessManager = $this->shouldUseProcessManager(); // Check if we need process manager
+
+        $this->startRepl('php bin/phunkie -c');
+    }
+
     private function shouldUseProcessManager(): bool
     {
         // For now, default to direct manager
