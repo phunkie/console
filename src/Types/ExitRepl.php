@@ -11,4 +11,6 @@
 
 namespace Phunkie\Console\Types;
 
-final class ExitRepl extends ReplResult {}
+final class ExitRepl extends ReplResult
+{
+}

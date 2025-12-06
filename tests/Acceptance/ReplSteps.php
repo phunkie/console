@@ -203,7 +203,19 @@ class ReplSteps implements Context
     #[Given('I run :command')]
     public function iRun(string $command): void
     {
-        $this->cleanup();
+        // Don't call cleanup() here as it deletes files created in Given steps
+        if ($this->useProcessManager) {
+            $this->processManager->terminate();
+        } else {
+            $this->directManager->reset();
+        }
+
+        $this->output = '';
+        $this->inputs = [];
+        $this->sentInputs = [];
+        $this->variableCount = 0;
+        $this->hasExited = false;
+
         $this->useProcessManager = true; // Always use process manager for "I run" scenarios
         $this->startRepl($command);
     }

@@ -20,6 +20,7 @@ use Phunkie\Console\Types\TypeError;
 use Phunkie\Console\Types\ReplError;
 use Phunkie\Console\Types\ReplSession;
 use Phunkie\Validation\Validation;
+
 use function Success;
 use function Failure;
 
@@ -33,7 +34,7 @@ use function Failure;
 function evaluateExpression(string $input, ReplSession $session): Validation
 {
     return \Phunkie\Console\Functions\parseInput($input)
-        ->flatMap(fn($ast) => evaluateAst($ast, $session));
+        ->flatMap(fn ($ast) => evaluateAst($ast, $session));
 }
 
 /**
@@ -70,7 +71,7 @@ function evaluateAst(array $ast, ReplSession $session): Validation
         if ($stmt->expr instanceof Expr\Assign &&
             $stmt->expr->var instanceof Expr\Variable &&
             is_string($stmt->expr->var->name)) {
-            return $result->map(function($evalResult) use ($stmt) {
+            return $result->map(function ($evalResult) use ($stmt) {
                 $varName = '$' . $stmt->expr->var->name;
                 // Create a new result with assignment metadata
                 return new EvaluationResult(
@@ -308,7 +309,7 @@ function evaluateVariableNode(Expr\Variable $node, ReplSession $session): Valida
     // Check if this is a variable-variable ($$var)
     if ($node->name instanceof Node) {
         // Evaluate the inner expression to get the variable name
-        return evaluateNode($node->name, $session)->flatMap(function($result) use ($session) {
+        return evaluateNode($node->name, $session)->flatMap(function ($result) use ($session) {
             $varName = $result->value;
 
             if (!is_string($varName)) {
@@ -684,6 +685,14 @@ function evaluateMethodCall(Expr\MethodCall $node, ReplSession $session): Valida
             } else {
                 $args[] = $value;
             }
+        }
+
+        // Check if method is callable
+        if (!is_callable([$obj, $methodName])) {
+            return Failure(new EvaluationError(
+                get_class($node),
+                sprintf('Uncaught Error: Call to undefined method %s::%s()', is_object($obj) ? get_class($obj) : gettype($obj), $methodName)
+            ));
         }
 
         // Call the method
@@ -1383,7 +1392,7 @@ function evaluateArrowFunction(Expr\ArrowFunction $node, ReplSession $session): 
 {
     try {
         // Capture the arrow function AST and session for later execution
-        $arrowFn = function(...$args) use ($node, $session) {
+        $arrowFn = function (...$args) use ($node, $session) {
             // Create a new session with the function parameters bound
             $newVars = $session->variables;
             foreach ($node->params as $i => $param) {
@@ -1403,7 +1412,7 @@ function evaluateArrowFunction(Expr\ArrowFunction $node, ReplSession $session): 
 
             if ($result->isLeft()) {
                 // Get the error using fold
-                $error = $result->fold(fn($e) => $e)(fn($r) => null);
+                $error = $result->fold(fn ($e) => $e)(fn ($r) => null);
                 throw new \RuntimeException('Arrow function evaluation failed: ' . $error->reason);
             }
 
@@ -1440,7 +1449,7 @@ function evaluateClosure(Expr\Closure $node, ReplSession $session): Validation
         }
 
         // Create the closure
-        $closure = function(...$args) use ($node, $session, $useVars) {
+        $closure = function (...$args) use ($node, $session, $useVars) {
             // Create a new session with the function parameters bound
             $newVars = $session->variables;
 
@@ -1469,7 +1478,7 @@ function evaluateClosure(Expr\Closure $node, ReplSession $session): Validation
                     if ($stmt->expr !== null) {
                         $result = evaluateNode($stmt->expr, $newSession);
                         if ($result->isLeft()) {
-                            $error = $result->fold(fn($e) => $e)(fn($r) => null);
+                            $error = $result->fold(fn ($e) => $e)(fn ($r) => null);
                             throw new \RuntimeException('Closure evaluation failed: ' . $error->reason);
                         }
                         $returnValue = $result->getOrElse(null)->value;
@@ -1478,7 +1487,7 @@ function evaluateClosure(Expr\Closure $node, ReplSession $session): Validation
                 } elseif ($stmt instanceof Node\Stmt\Expression) {
                     $result = evaluateNode($stmt->expr, $newSession);
                     if ($result->isLeft()) {
-                        $error = $result->fold(fn($e) => $e)(fn($r) => null);
+                        $error = $result->fold(fn ($e) => $e)(fn ($r) => null);
                         throw new \RuntimeException('Closure evaluation failed: ' . $error->reason);
                     }
                     // Update session if this is an assignment
@@ -1926,7 +1935,7 @@ function evaluateEnumDefinition(Node\Stmt\Enum_ $stmt, ReplSession $session): Va
 
         // Set up error handler to catch fatal errors from eval()
         $errorMessage = null;
-        set_error_handler(function($severity, $message, $file, $line) use (&$errorMessage) {
+        set_error_handler(function ($severity, $message, $file, $line) use (&$errorMessage) {
             $errorMessage = $message;
             return true; // Don't execute PHP's internal error handler
         });
@@ -2168,7 +2177,7 @@ function evaluateErrorSuppress(Expr\ErrorSuppress $node, ReplSession $session): 
 {
     try {
         // Set up error handler to suppress errors
-        $oldHandler = set_error_handler(function() {
+        $oldHandler = set_error_handler(function () {
             // Suppress all errors and warnings
             return true;
         });
@@ -2459,7 +2468,8 @@ class StmtBlockResult
     public function __construct(
         public readonly Validation $result,
         public readonly ReplSession $updatedSession
-    ) {}
+    ) {
+    }
 }
 
 /**
@@ -2568,7 +2578,7 @@ function evaluateStmtBlock(array $stmts, ReplSession $session): Validation
             if ($stmt->expr !== null) {
                 $result = evaluateNode($stmt->expr, $session);
                 if ($result->isLeft()) {
-                    $error = $result->fold(fn($e) => $e)(fn($r) => null);
+                    $error = $result->fold(fn ($e) => $e)(fn ($r) => null);
                     throw new \RuntimeException('Return expression evaluation failed: ' . $error->reason);
                 }
                 throw new FunctionReturnException($result->getOrElse(null)->value);
@@ -2926,7 +2936,7 @@ function evaluateAssignment(Expr\Assign $node, ReplSession $session): Validation
         // Handle variable variables ($$var = value)
         if ($node->var->name instanceof Expr\Variable || $node->var->name instanceof Node) {
             // Evaluate the variable name
-            return evaluateNode($node->var->name, $session)->flatMap(function($nameResult) use ($node, $session) {
+            return evaluateNode($node->var->name, $session)->flatMap(function ($nameResult) use ($node, $session) {
                 $varName = $nameResult->value;
 
                 if (!is_string($varName)) {
@@ -2934,7 +2944,7 @@ function evaluateAssignment(Expr\Assign $node, ReplSession $session): Validation
                 }
 
                 // Evaluate the value to assign
-                return evaluateNode($node->expr, $session)->map(function($valueResult) use ($varName) {
+                return evaluateNode($node->expr, $session)->map(function ($valueResult) use ($varName) {
                     $value = $valueResult->value;
                     return EvaluationResult::of($value, getType($value), '$' . $varName);
                 });
@@ -3334,10 +3344,10 @@ function isComplexTypeValid(mixed $value, mixed $type): bool
 function getTypeName(mixed $type): string
 {
     if ($type instanceof Node\UnionType) {
-        $names = array_map(fn($t) => getTypeName($t), $type->types);
+        $names = array_map(fn ($t) => getTypeName($t), $type->types);
         return implode('|', $names);
     } elseif ($type instanceof Node\IntersectionType) {
-        $names = array_map(fn($t) => getTypeName($t), $type->types);
+        $names = array_map(fn ($t) => getTypeName($t), $type->types);
         return implode('&', $names);
     } else {
         return $type->toString();
@@ -3472,7 +3482,7 @@ function evaluateFunctionDefinition(Node\Stmt\Function_ $node, ReplSession $sess
         // Create the function
         if ($hasYield) {
             // For generator functions, we need to create a function that returns a Generator
-            $func = function(...$args) use ($node, $session, $funcName) {
+            $func = function (...$args) use ($node, $session, $funcName) {
                 // Validate argument count and types before executing
                 foreach ($node->params as $i => $param) {
                     // Check if argument is missing for required parameter
@@ -3480,7 +3490,7 @@ function evaluateFunctionDefinition(Node\Stmt\Function_ $node, ReplSession $sess
                         // Check if this parameter has a default value
                         if ($param->default === null) {
                             // Required parameter is missing
-                            $expectedCount = count(array_filter($node->params, fn($p) => $p->default === null));
+                            $expectedCount = count(array_filter($node->params, fn ($p) => $p->default === null));
                             throw new \TypeError(
                                 "$funcName() expects at least $expectedCount argument" . ($expectedCount === 1 ? '' : 's') . ", " . count($args) . " given"
                             );
@@ -3525,7 +3535,7 @@ function evaluateFunctionDefinition(Node\Stmt\Function_ $node, ReplSession $sess
                         // Evaluate the default value expression
                         $defaultResult = evaluateNode($param->default, $session);
                         if ($defaultResult->isLeft()) {
-                            $error = $defaultResult->fold(fn($e) => $e)(fn($r) => null);
+                            $error = $defaultResult->fold(fn ($e) => $e)(fn ($r) => null);
                             throw new \RuntimeException('Default parameter evaluation failed: ' . $error->reason);
                         }
                         $defaultValue = $defaultResult->getOrElse(null)->value;
@@ -3548,7 +3558,7 @@ function evaluateFunctionDefinition(Node\Stmt\Function_ $node, ReplSession $sess
                         // Evaluate the yield value
                         $yieldResult = evaluateNode($stmt->expr->value, $newSession);
                         if ($yieldResult->isLeft()) {
-                            $error = $yieldResult->fold(fn($e) => $e)(fn($r) => null);
+                            $error = $yieldResult->fold(fn ($e) => $e)(fn ($r) => null);
                             throw new \RuntimeException('Yield evaluation failed: ' . $error->reason);
                         }
 
@@ -3558,7 +3568,7 @@ function evaluateFunctionDefinition(Node\Stmt\Function_ $node, ReplSession $sess
                         if ($stmt->expr->key !== null) {
                             $keyResult = evaluateNode($stmt->expr->key, $newSession);
                             if ($keyResult->isLeft()) {
-                                $error = $keyResult->fold(fn($e) => $e)(fn($r) => null);
+                                $error = $keyResult->fold(fn ($e) => $e)(fn ($r) => null);
                                 throw new \RuntimeException('Yield key evaluation failed: ' . $error->reason);
                             }
                             yield $keyResult->getOrElse(null)->value => $value;
@@ -3569,7 +3579,7 @@ function evaluateFunctionDefinition(Node\Stmt\Function_ $node, ReplSession $sess
                         // Handle other statements in the function body
                         $result = evaluateNode($stmt->expr, $newSession);
                         if ($result->isLeft()) {
-                            $error = $result->fold(fn($e) => $e)(fn($r) => null);
+                            $error = $result->fold(fn ($e) => $e)(fn ($r) => null);
                             throw new \RuntimeException('Statement evaluation failed: ' . $error->reason);
                         }
                     }
@@ -3577,7 +3587,7 @@ function evaluateFunctionDefinition(Node\Stmt\Function_ $node, ReplSession $sess
             };
         } else {
             // For regular functions
-            $func = function(...$args) use ($node, $session, $funcName) {
+            $func = function (...$args) use ($node, $session, $funcName) {
                 // Validate argument count and types before executing
                 foreach ($node->params as $i => $param) {
                     // Check if argument is missing for required parameter
@@ -3585,7 +3595,7 @@ function evaluateFunctionDefinition(Node\Stmt\Function_ $node, ReplSession $sess
                         // Check if this parameter has a default value
                         if ($param->default === null) {
                             // Required parameter is missing
-                            $expectedCount = count(array_filter($node->params, fn($p) => $p->default === null));
+                            $expectedCount = count(array_filter($node->params, fn ($p) => $p->default === null));
                             throw new \TypeError(
                                 "$funcName() expects at least $expectedCount argument" . ($expectedCount === 1 ? '' : 's') . ", " . count($args) . " given"
                             );
@@ -3630,7 +3640,7 @@ function evaluateFunctionDefinition(Node\Stmt\Function_ $node, ReplSession $sess
                         // Evaluate the default value expression
                         $defaultResult = evaluateNode($param->default, $session);
                         if ($defaultResult->isLeft()) {
-                            $error = $defaultResult->fold(fn($e) => $e)(fn($r) => null);
+                            $error = $defaultResult->fold(fn ($e) => $e)(fn ($r) => null);
                             throw new \RuntimeException('Default parameter evaluation failed: ' . $error->reason);
                         }
                         $defaultValue = $defaultResult->getOrElse(null)->value;
@@ -3654,7 +3664,7 @@ function evaluateFunctionDefinition(Node\Stmt\Function_ $node, ReplSession $sess
                     $result = evaluateStmtBlock($stmtsToEvaluate, $newSession);
 
                     if ($result->isLeft()) {
-                        $error = $result->fold(fn($e) => $e)(fn($r) => null);
+                        $error = $result->fold(fn ($e) => $e)(fn ($r) => null);
                         throw new \RuntimeException('Function body evaluation failed: ' . $error->reason);
                     }
 
@@ -3929,7 +3939,7 @@ function evaluateAnonymousClass(Expr\New_ $node, ReplSession $session): Validati
 
         // Set up error handler
         $errorMessage = null;
-        set_error_handler(function($severity, $message, $file, $line) use (&$errorMessage) {
+        set_error_handler(function ($severity, $message, $file, $line) use (&$errorMessage) {
             $errorMessage = $message;
             return true;
         });
@@ -4022,7 +4032,7 @@ function evaluateInterfaceDefinition(Node\Stmt\Interface_ $interfaceNode, ReplSe
 
         // Set up error handler
         $errorMessage = null;
-        set_error_handler(function($severity, $message, $file, $line) use (&$errorMessage) {
+        set_error_handler(function ($severity, $message, $file, $line) use (&$errorMessage) {
             $errorMessage = $message;
             return true;
         });
@@ -4103,7 +4113,7 @@ function evaluateTraitDefinition(Node\Stmt\Trait_ $traitNode, ReplSession $sessi
 
         // Set up error handler
         $errorMessage = null;
-        set_error_handler(function($severity, $message, $file, $line) use (&$errorMessage) {
+        set_error_handler(function ($severity, $message, $file, $line) use (&$errorMessage) {
             $errorMessage = $message;
             return true;
         });
@@ -4210,7 +4220,7 @@ function evaluateClassDefinition(Node\Stmt\Class_ $classNode, ReplSession $sessi
 
         // Set up error handler to catch warnings and notices from eval()
         $errorMessage = null;
-        set_error_handler(function($severity, $message, $file, $line) use (&$errorMessage) {
+        set_error_handler(function ($severity, $message, $file, $line) use (&$errorMessage) {
             $errorMessage = $message;
             return true; // Don't execute PHP's internal error handler
         });

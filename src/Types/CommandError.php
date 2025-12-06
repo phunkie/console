@@ -16,7 +16,8 @@ final class CommandError extends ReplError
     public function __construct(
         public readonly string $command,
         public readonly string $reason
-    ) {}
+    ) {
+    }
 
     public function message(): string
     {

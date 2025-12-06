@@ -17,6 +17,7 @@ use Phunkie\Console\Types\ContinueRepl;
 use Phunkie\Console\Types\ExitRepl;
 use Phunkie\Effect\IO\IO;
 use Phunkie\Utils\Trampoline\Trampoline;
+
 use function Phunkie\Effect\Functions\console\printLn;
 use function Phunkie\Console\Functions\{evaluateExpression, addToHistory, setVariable, nextVariable, isColorEnabled, printHelp, printVariables, printHistory, printBanner, readLineFiltered, resetSession, setNamespace, addUseStatement};
 use function Phunkie\Functions\trampoline\{More, Done};
@@ -33,7 +34,7 @@ use function Phunkie\Functions\trampoline\{More, Done};
 function replLoop(ReplSession $session): IO
 {
     // Run the trampolined loop
-    return new IO(fn() => replLoopTrampoline($session)->run());
+    return new IO(fn () => replLoopTrampoline($session)->run());
 }
 
 /**
@@ -66,7 +67,7 @@ function replLoopTrampoline(ReplSession $session): Trampoline
 
     if ($result instanceof ContinueRepl) {
         // Return More to continue the trampoline
-        return More(fn() => replLoopTrampoline($result->session));
+        return More(fn () => replLoopTrampoline($result->session));
     }
 
     // Shouldn't happen but handle gracefully
@@ -85,7 +86,7 @@ function processInput(?string $input, ReplSession $session): IO
 {
     // Handle EOF (Control-D)
     if ($input === null) {
-        return new IO(fn() => new ExitRepl());
+        return new IO(fn () => new ExitRepl());
     }
 
     // Combine with any incomplete input from previous lines
@@ -97,7 +98,7 @@ function processInput(?string $input, ReplSession $session): IO
 
     // Handle empty input
     if ($trimmed === '') {
-        return new IO(fn() => new ContinueRepl($session));
+        return new IO(fn () => new ContinueRepl($session));
     }
 
     // Handle REPL commands (only if not in multi-line mode)
@@ -115,7 +116,7 @@ function processInput(?string $input, ReplSession $session): IO
             $session->variableCounter,
             $combinedInput
         );
-        return new IO(fn() => new ContinueRepl($newSession));
+        return new IO(fn () => new ContinueRepl($newSession));
     }
 
     // Clear incomplete input buffer for complete expression
@@ -295,18 +296,18 @@ function processCommand(string $command, ReplSession $session): IO
     }
 
     // Check for :kind command with expression argument
-    if (preg_match('/^:kind\s+(.+)$/', $command, $matches)) {
+    if (preg_match('/^:(?:kind|k)\s+(.+)$/', $command, $matches)) {
         return showKindCommand(trim($matches[1]), $session);
     }
 
     return match ($command) {
-        ':exit', ':quit' => new IO(fn() => new ExitRepl()),
-        ':help' => printHelp()->map(fn() => new ContinueRepl($session)),
-        ':vars' => printVariables($session)->map(fn() => new ContinueRepl($session)),
-        ':history' => printHistory($session)->map(fn() => new ContinueRepl($session)),
+        ':exit', ':quit' => new IO(fn () => new ExitRepl()),
+        ':help' => printHelp()->map(fn () => new ContinueRepl($session)),
+        ':vars' => printVariables($session)->map(fn () => new ContinueRepl($session)),
+        ':history' => printHistory($session)->map(fn () => new ContinueRepl($session)),
         ':reset' => resetReplState($session),
         default => printLn("Unknown command: $command")
-            ->map(fn() => new ContinueRepl($session))
+            ->map(fn () => new ContinueRepl($session))
     };
 }
 
@@ -322,7 +323,7 @@ function resetReplState(ReplSession $session): IO
     $newSession = $pair->_1;
 
     return printLn("REPL state reset")
-        ->map(fn() => new ContinueRepl($newSession));
+        ->map(fn () => new ContinueRepl($newSession));
 }
 
 /**
@@ -334,7 +335,7 @@ function resetReplState(ReplSession $session): IO
  */
 function loadFile(string $filepath, ReplSession $session): IO
 {
-    return new IO(function() use ($filepath, $session) {
+    return new IO(function () use ($filepath, $session) {
         // Check if file exists
         if (!file_exists($filepath)) {
             printLn("Error: File not found: $filepath")->unsafeRun();
@@ -434,7 +435,7 @@ function findModuleFile(string $package, string $packagePath, string $module): ?
  */
 function importFunction(string $import, ReplSession $session): IO
 {
-    return new IO(function() use ($import, $session) {
+    return new IO(function () use ($import, $session) {
         // Parse package::module/function or module/function pattern
         $package = 'phunkie'; // Default to core phunkie
         $packagePath = 'Phunkie/Functions';
@@ -490,7 +491,7 @@ function importFunction(string $import, ReplSession $session): IO
         $availableFunctions = $functionMatches[1];
 
         // Filter out internal functions (those starting with assert or format)
-        $exportedFunctions = array_filter($availableFunctions, function($name) {
+        $exportedFunctions = array_filter($availableFunctions, function ($name) {
             return !in_array($name, ['assertListOrString', 'formatError', 'ImmList', 'Nil', 'Cons',
                                       'ImmSet', 'ImmMap', 'Pair', 'Some', 'None', 'Success', 'Failure',
                                       'Unit', 'Tuple', 'Function1']);
@@ -557,19 +558,19 @@ function importFunction(string $import, ReplSession $session): IO
  */
 function showTypeCommand(string $expression, ReplSession $session): IO
 {
-    return new IO(function() use ($expression, $session) {
+    return new IO(function () use ($expression, $session) {
         // Evaluate the expression to get the value
         $result = evaluateExpression($expression, $session);
 
         // Use fold to handle both success and failure cases
         $result->fold(
             // Failure case: error is passed to this function
-            function($error) use ($session) {
+            function ($error) use ($session) {
                 printLn(formatError($error, $session))->unsafeRun();
             }
         )(
             // Success case: result is passed to this function
-            function($evalResult) {
+            function ($evalResult) {
                 // Use Phunkie's showType function to get the type
                 $type = \Phunkie\Functions\show\showType($evalResult->value);
                 printLn($type)->unsafeRun();
@@ -591,53 +592,50 @@ function showTypeCommand(string $expression, ReplSession $session): IO
  */
 function showKindCommand(string $expression, ReplSession $session): IO
 {
-    return new IO(function() use ($expression, $session) {
+    return new IO(function () use ($expression, $session) {
         // Evaluate the expression to get the value
         $result = evaluateExpression($expression, $session);
 
         // Use fold to handle both success and failure cases
         $result->fold(
             // Failure case: error is passed to this function
-            function($error) use ($session) {
+            function ($error) use ($session) {
                 printLn(formatError($error, $session))->unsafeRun();
             }
         )(
             // Success case: result is passed to this function
-            function($evalResult) {
+            function ($evalResult) {
                 // Get the type of the value
                 $type = \Phunkie\Functions\show\showType($evalResult->value);
 
-                // Get the actual class name for more accurate kind lookup
-                $value = $evalResult->value;
-                $className = is_object($value) ? get_class($value) : null;
-
-                // Extract base type name for showKind
+                // For :kind command on a value, we usually want the kind of the type constructor
+                // e.g. Some(1) -> Option<Int> -> we want kind of "Option" (* -> *)
+                // If we passed "Option<Int>" to showKind, we'd get "*"
                 $baseType = $type;
 
-                // Handle special cases
-                if ($className === 'Phunkie\Types\None') {
+                // Handle None -> Option
+                if ($type === 'None') {
                     $baseType = 'Option';
-                } elseif ($className === 'Phunkie\Types\Pair') {
+                }
+
+                // Handle Tuple syntax (Int, String) -> Pair
+                elseif (str_starts_with($type, '(') && str_contains($type, ',')) {
                     $baseType = 'Pair';
                 } elseif (preg_match('/^([^<(]+)/', $type, $matches)) {
-                    // Remove type parameters: "Option<Int>" -> "Option", "List<Int>" -> "List"
                     $baseType = $matches[1];
                 }
 
-                // Use Phunkie's showKind function to get the kind
-                $kindOption = \Phunkie\Functions\show\showKind($baseType);
-
-                if ($kindOption->isDefined()) {
+                $kind = \Phunkie\Functions\show\showKind($baseType);
+                if ($kind->isDefined()) {
                     // Extract just the kind signature (e.g., "* -> *")
-                    $kindInfo = $kindOption->get();
-                    // Parse the kind info to extract just the signature
+                    $kindInfo = $kind->get();
                     if (preg_match('/:: (.+)$/', $kindInfo, $matches)) {
                         printLn($matches[1])->unsafeRun();
                     } else {
                         printLn($kindInfo)->unsafeRun();
                     }
                 } else {
-                    printLn("Error: Could not determine kind for type: $baseType")->unsafeRun();
+                    printLn("Error: Could not calculate kind for: $type ($baseType)")->unsafeRun();
                 }
             }
         );
@@ -645,6 +643,8 @@ function showKindCommand(string $expression, ReplSession $session): IO
         return new ContinueRepl($session);
     });
 }
+
+
 
 /**
  * Formats an error message with optional color support.
@@ -693,11 +693,11 @@ function evaluateAndDisplay(string $expression, ReplSession $session): IO
     // Use fold to handle both success and failure cases
     return $evalResult->fold(
         // Failure case: error is passed to this function
-        fn($error) => printLn(formatError($error, $session))
-            ->map(fn() => new ContinueRepl($session))
+        fn ($error) => printLn(formatError($error, $session))
+            ->map(fn () => new ContinueRepl($session))
     )(
         // Success case: result is passed to this function
-        fn($result) => displayResult($result, $session, $expression)
+        fn ($result) => displayResult($result, $session, $expression)
     );
 }
 
@@ -728,7 +728,7 @@ function displayResult(EvaluationResult $result, ReplSession $session, string $e
             : "Namespace cleared";
 
         return printLn($output)
-            ->map(fn() => new ContinueRepl($newSession2));
+            ->map(fn () => new ContinueRepl($newSession2));
     }
 
     // Handle use statement
@@ -749,7 +749,7 @@ function displayResult(EvaluationResult $result, ReplSession $session, string $e
         $output = "Imported $importCount " . ($importCount === 1 ? 'class/function' : 'classes/functions');
 
         return printLn($output)
-            ->map(fn() => new ContinueRepl($newSession));
+            ->map(fn () => new ContinueRepl($newSession));
     }
 
     // Handle silent operations (property assignments, etc.) that shouldn't produce output
@@ -782,14 +782,14 @@ function displayResult(EvaluationResult $result, ReplSession $session, string $e
             $newSession = $pair->_1;
 
             return printLn($output)
-                ->map(fn() => new ContinueRepl($newSession));
+                ->map(fn () => new ContinueRepl($newSession));
         }
 
         // Other silent operations - add to history but don't print anything
         $pair = (addToHistory($expression))->run($session);
         $newSession = $pair->_1;
 
-        return new IO(fn() => new ContinueRepl($newSession));
+        return new IO(fn () => new ContinueRepl($newSession));
     }
 
     // Check if this is an enum definition
@@ -804,7 +804,7 @@ function displayResult(EvaluationResult $result, ReplSession $session, string $e
             : "// enum {$result->value} defined";
 
         return printLn($output)
-            ->map(fn() => new ContinueRepl($newSession));
+            ->map(fn () => new ContinueRepl($newSession));
     }
 
     // Check if this was an assignment with a specific variable name
@@ -834,7 +834,7 @@ function displayResult(EvaluationResult $result, ReplSession $session, string $e
                 : "// function $displayName defined";
 
             return printLn($output)
-                ->map(fn() => new ContinueRepl($currentSession));
+                ->map(fn () => new ContinueRepl($currentSession));
         }
 
         // Special handling for class definitions
@@ -844,7 +844,7 @@ function displayResult(EvaluationResult $result, ReplSession $session, string $e
                 : "// class $varName defined";
 
             return printLn($output)
-                ->map(fn() => new ContinueRepl($currentSession));
+                ->map(fn () => new ContinueRepl($currentSession));
         }
 
         // Special handling for interface definitions
@@ -854,7 +854,7 @@ function displayResult(EvaluationResult $result, ReplSession $session, string $e
                 : "// interface $varName defined";
 
             return printLn($output)
-                ->map(fn() => new ContinueRepl($currentSession));
+                ->map(fn () => new ContinueRepl($currentSession));
         }
 
         // Special handling for trait definitions
@@ -864,7 +864,7 @@ function displayResult(EvaluationResult $result, ReplSession $session, string $e
                 : "// trait $varName defined";
 
             return printLn($output)
-                ->map(fn() => new ContinueRepl($currentSession));
+                ->map(fn () => new ContinueRepl($currentSession));
         }
 
         // Format output with bold variable name, pink type, and bold value if colors are enabled
@@ -873,7 +873,7 @@ function displayResult(EvaluationResult $result, ReplSession $session, string $e
             : "$varName: {$result->type} = {$result->format()}";
 
         return printLn($output)
-            ->map(fn() => new ContinueRepl($currentSession));
+            ->map(fn () => new ContinueRepl($currentSession));
     }
 
     // Check if this is an output statement (echo, print, var_dump, etc.)
@@ -886,7 +886,7 @@ function displayResult(EvaluationResult $result, ReplSession $session, string $e
         // Add a newline after the output to prevent prompt from running into it
         echo "\n";
 
-        return new IO(fn() => new ContinueRepl($newSession));
+        return new IO(fn () => new ContinueRepl($newSession));
     }
 
     // Generate next variable name for auto-assignment
@@ -915,5 +915,5 @@ function displayResult(EvaluationResult $result, ReplSession $session, string $e
         : "$varName: {$result->type} = {$result->format()}";
 
     return printLn($output)
-        ->map(fn() => new ContinueRepl($currentSession));
+        ->map(fn () => new ContinueRepl($currentSession));
 }

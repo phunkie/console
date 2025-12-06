@@ -18,9 +18,10 @@ use function Phunkie\Console\Functions\{setColors, printBanner, loadHistory, sav
 
 (function (){
     $autoloadPaths = [
-        __DIR__ . '/../vendor/autoload.php',
-        __DIR__ . '/../../../autoload.php',
-        __DIR__ . '/../../../../autoload.php'
+        __DIR__ . '/../vendor/autoload.php', // Local development (console project)
+        dirname(__DIR__, 3) . '/autoload.php', // Installed as dependency (vendor/phunkie/console/bin/phunkie -> vendor/autoload.php)
+        dirname(__DIR__, 4) . '/autoload.php', // Global install sometimes puts bin deeper?
+        getcwd() . '/vendor/autoload.php' // Running from project root
     ];
 
     $autoloaded = false;
@@ -79,9 +80,21 @@ use function Phunkie\Console\Functions\{setColors, printBanner, loadHistory, sav
         saveHistory()->unsafeRun();
     });
 
-    $app = new PhunkieConsole();
+    $args = $_SERVER['argv'];
+    $app = null;
 
-    $app->run($_SERVER['argv'])->unsafeRun();
+    if (isset($args[1]) && !str_starts_with($args[1], '-')) {
+        $className = $args[1];
+        if (class_exists($className) && is_subclass_of($className, IOApp::class)) {
+            $app = new $className();
+        }
+    }
+
+    if ($app === null) {
+        $app = new PhunkieConsole();
+    }
+
+    $app->run($args)->unsafeRun();
 })();
 
 

@@ -24,7 +24,8 @@ final readonly class EvaluationResult
         public ?string $assignedVariable = null,
         public array $additionalAssignments = [],
         public bool $isOutputStatement = false
-    ) {}
+    ) {
+    }
 
     public static function of(mixed $value, string $type, ?string $assignedVariable = null, array $additionalAssignments = [], bool $isOutputStatement = false): EvaluationResult
     {
@@ -61,7 +62,7 @@ final readonly class EvaluationResult
 
     private function formatArray(array $arr): string
     {
-        $items = array_map(fn($v) => $this->formatValue($v), $arr);
+        $items = array_map(fn ($v) => $this->formatValue($v), $arr);
         return '[' . implode(', ', $items) . ']';
     }
 
