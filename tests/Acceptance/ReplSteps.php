@@ -245,8 +245,8 @@ class ReplSteps implements Context
 
         if (!str_contains($this->output, $expected)) {
             throw new \Exception(
-                "Expected output to contain '$expected'\n" .
-                "Actual output:\n" . $this->output
+                "Expected output to contain '$expected'\n"
+                . "Actual output:\n" . $this->output
             );
         }
     }
@@ -265,8 +265,8 @@ class ReplSteps implements Context
         // When -c flag is used, the prompt should have color codes
         if (!str_contains($this->output, "\033[")) {
             throw new \Exception(
-                "Expected output to contain ANSI color codes\n" .
-                "Actual output:\n" . $this->output
+                "Expected output to contain ANSI color codes\n"
+                . "Actual output:\n" . $this->output
             );
         }
     }
@@ -287,8 +287,8 @@ class ReplSteps implements Context
             $varName = '$var' . $i;
             if (!str_contains($this->output, $varName)) {
                 throw new \Exception(
-                    "Expected session to have variable $varName\n" .
-                    "Actual output:\n" . $this->output
+                    "Expected session to have variable $varName\n"
+                    . "Actual output:\n" . $this->output
                 );
             }
         }
@@ -360,8 +360,8 @@ class ReplSteps implements Context
         $pattern = preg_quote($variable, '/') . '.*' . preg_quote($expected, '/');
         if (!preg_match('/' . $pattern . '/s', $this->output)) {
             throw new \Exception(
-                "Expected output to contain '$expected' in variable '$variable'\n" .
-                "Actual output:\n" . $this->output
+                "Expected output to contain '$expected' in variable '$variable'\n"
+                . "Actual output:\n" . $this->output
             );
         }
     }
@@ -371,8 +371,8 @@ class ReplSteps implements Context
     {
         if (str_contains($this->output, $unexpected)) {
             throw new \Exception(
-                "Expected output NOT to contain '$unexpected'\n" .
-                "Actual output:\n" . $this->output
+                "Expected output NOT to contain '$unexpected'\n"
+                . "Actual output:\n" . $this->output
             );
         }
     }
@@ -383,15 +383,15 @@ class ReplSteps implements Context
     {
         if (!str_contains($this->output, 'Error') && !str_contains($this->output, 'error')) {
             throw new \Exception(
-                "Expected output to contain an error\n" .
-                "Actual output:\n" . $this->output
+                "Expected output to contain an error\n"
+                . "Actual output:\n" . $this->output
             );
         }
 
         if (!str_contains($this->output, $expected)) {
             throw new \Exception(
-                "Expected error to contain '$expected'\n" .
-                "Actual output:\n" . $this->output
+                "Expected error to contain '$expected'\n"
+                . "Actual output:\n" . $this->output
             );
         }
     }

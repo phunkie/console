@@ -1,4 +1,5 @@
 <?php
+
 /*
  * This file is part of Phunkie, library with functional structures for PHP.
  *
@@ -13,6 +14,7 @@ namespace Tests\Acceptance\Support;
 use Phunkie\Console\Types\ReplSession;
 use Phunkie\Console\Types\ContinueRepl;
 use Phunkie\Console\Types\ExitRepl;
+
 use function Phunkie\Console\Repl\processInput;
 use function Phunkie\Console\Functions\setColors;
 

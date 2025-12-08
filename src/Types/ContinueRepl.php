@@ -13,7 +13,5 @@ namespace Phunkie\Console\Types;
 
 final class ContinueRepl extends ReplResult
 {
-    public function __construct(public readonly ReplSession $session)
-    {
-    }
+    public function __construct(public readonly ReplSession $session) {}
 }

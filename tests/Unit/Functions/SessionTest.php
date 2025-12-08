@@ -13,6 +13,7 @@ namespace Tests\Phunkie\Console\Functions;
 
 use PHPUnit\Framework\TestCase;
 use Phunkie\Console\Types\ReplSession;
+
 use function Phunkie\Console\Functions\{
     getSession,
     modifySession,

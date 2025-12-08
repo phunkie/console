@@ -16,8 +16,7 @@ final class EvaluationError extends ReplError
     public function __construct(
         public readonly string $expression,
         public readonly string $reason
-    ) {
-    }
+    ) {}
 
     public function message(): string
     {

@@ -30,7 +30,7 @@ use Phunkie\Types\Pair;
  */
 function getSession(): State
 {
-    return (new State(fn ($s) => Pair($s, $s)));
+    return (new State(fn($s) => Pair($s, $s)));
 }
 
 /**
@@ -41,7 +41,7 @@ function getSession(): State
  */
 function modifySession(callable $f): State
 {
-    return new State(fn (ReplSession $s) => Pair($f($s), null));
+    return new State(fn(ReplSession $s) => Pair($f($s), null));
 }
 
 /**
@@ -53,8 +53,8 @@ function modifySession(callable $f): State
 function addToHistory(string $expression): State
 {
     return modifySession(
-        fn (ReplSession $s) =>
-        new ReplSession(
+        fn(ReplSession $s)
+        => new ReplSession(
             $s->history->append($expression),
             $s->variables,
             $s->colorEnabled,
@@ -71,13 +71,13 @@ function addToHistory(string $expression): State
  *
  * @param string $name
  * @param mixed $value
- * @return State<ReplSession, Unit>
+ * @return State<ReplSession, null>
  */
 function setVariable(string $name, mixed $value): State
 {
     return modifySession(
-        fn (ReplSession $s) =>
-        new ReplSession(
+        fn(ReplSession $s)
+        => new ReplSession(
             $s->history,
             $s->variables->plus($name, $value),
             $s->colorEnabled,
@@ -93,11 +93,11 @@ function setVariable(string $name, mixed $value): State
  * Gets a variable from the session.
  *
  * @param string $name
- * @return State<ReplSession, Option>
+ * @return State<ReplSession, \Phunkie\Types\Option>
  */
 function getVariable(string $name): State
 {
-    return new State(fn (ReplSession $s) => Pair($s, $s->variables->get($name)));
+    return new State(fn(ReplSession $s) => Pair($s, $s->variables->get($name)));
 }
 
 /**
@@ -129,7 +129,7 @@ function nextVariable(): State
  */
 function getVariables(): State
 {
-    return new State(fn (ReplSession $s) => Pair($s, $s->variables));
+    return new State(fn(ReplSession $s) => Pair($s, $s->variables));
 }
 
 /**
@@ -139,7 +139,7 @@ function getVariables(): State
  */
 function getHistory(): State
 {
-    return new State(fn (ReplSession $s) => Pair($s, $s->history));
+    return new State(fn(ReplSession $s) => Pair($s, $s->history));
 }
 
 /**
@@ -151,8 +151,8 @@ function getHistory(): State
 function setColors(bool $enabled): State
 {
     return modifySession(
-        fn (ReplSession $s) =>
-        new ReplSession(
+        fn(ReplSession $s)
+        => new ReplSession(
             $s->history,
             $s->variables,
             $enabled,
@@ -171,7 +171,7 @@ function setColors(bool $enabled): State
  */
 function isColorEnabled(): State
 {
-    return new State(fn (ReplSession $s) => Pair($s, $s->colorEnabled));
+    return new State(fn(ReplSession $s) => Pair($s, $s->colorEnabled));
 }
 
 /**
@@ -182,8 +182,8 @@ function isColorEnabled(): State
 function resetSession(): State
 {
     return modifySession(
-        fn (ReplSession $s) =>
-        new ReplSession(
+        fn(ReplSession $s)
+        => new ReplSession(
             ImmList(),
             ImmMap(),
             $s->colorEnabled,
@@ -204,8 +204,8 @@ function resetSession(): State
 function setNamespace(?string $namespace): State
 {
     return modifySession(
-        fn (ReplSession $s) =>
-        new ReplSession(
+        fn(ReplSession $s)
+        => new ReplSession(
             $s->history,
             $s->variables,
             $s->colorEnabled,
@@ -224,7 +224,7 @@ function setNamespace(?string $namespace): State
  */
 function getCurrentNamespace(): State
 {
-    return new State(fn (ReplSession $s) => Pair($s, $s->currentNamespace));
+    return new State(fn(ReplSession $s) => Pair($s, $s->currentNamespace));
 }
 
 /**
@@ -237,8 +237,8 @@ function getCurrentNamespace(): State
 function addUseStatement(string $alias, string $fullName): State
 {
     return modifySession(
-        fn (ReplSession $s) =>
-        new ReplSession(
+        fn(ReplSession $s)
+        => new ReplSession(
             $s->history,
             $s->variables,
             $s->colorEnabled,
@@ -257,5 +257,5 @@ function addUseStatement(string $alias, string $fullName): State
  */
 function getUseStatements(): State
 {
-    return new State(fn (ReplSession $s) => Pair($s, $s->useStatements));
+    return new State(fn(ReplSession $s) => Pair($s, $s->useStatements));
 }

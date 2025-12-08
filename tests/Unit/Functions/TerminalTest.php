@@ -12,6 +12,7 @@
 namespace Tests\Phunkie\Console\Functions;
 
 use PHPUnit\Framework\TestCase;
+
 use function Phunkie\Console\Functions\{getHistoryFilePath, hasReadlineSupport};
 
 class TerminalTest extends TestCase

@@ -24,8 +24,7 @@ final readonly class EvaluationResult
         public ?string $assignedVariable = null,
         public array $additionalAssignments = [],
         public bool $isOutputStatement = false
-    ) {
-    }
+    ) {}
 
     public static function of(mixed $value, string $type, ?string $assignedVariable = null, array $additionalAssignments = [], bool $isOutputStatement = false): EvaluationResult
     {
@@ -47,14 +46,14 @@ final readonly class EvaluationResult
         return match (true) {
             is_null($value) => 'null',
             is_bool($value) => $value ? 'true' : 'false',
-            is_int($value) => (string)$value,
-            is_float($value) => (string)$value,
+            is_int($value) => (string) $value,
+            is_float($value) => (string) $value,
             is_string($value) => '"' . addslashes($value) . '"',
             is_array($value) => $this->formatArray($value),
             is_callable($value) => '<function>',
             is_object($value) && method_exists($value, 'show') => $value->show(),
             is_object($value) && method_exists($value, 'toString') => $value->toString(),
-            is_object($value) && method_exists($value, '__toString') => (string)$value,
+            is_object($value) && method_exists($value, '__toString') => (string) $value,
             is_object($value) => $this->formatObject($value),
             default => var_export($value, true)
         };
@@ -62,7 +61,7 @@ final readonly class EvaluationResult
 
     private function formatArray(array $arr): string
     {
-        $items = array_map(fn ($v) => $this->formatValue($v), $arr);
+        $items = array_map(fn($v) => $this->formatValue($v), $arr);
         return '[' . implode(', ', $items) . ']';
     }
 

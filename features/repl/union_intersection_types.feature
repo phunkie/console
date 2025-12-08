@@ -25,7 +25,7 @@ Feature: Union and intersection types
     And I press enter
     And I type "foo(true)"
     And I press enter
-    Then I should see "TypeError"
+    Then I should see "Type error"
     And I should see "must be of type int|string, bool given"
 
   Scenario: Function with union type return value
@@ -60,7 +60,7 @@ Feature: Union and intersection types
     And I press enter
     And I type "baz(new OnlyCountable())"
     And I press enter
-    Then I should see "TypeError"
+    Then I should see "Type error"
     And I should see "must be of type Countable&Traversable"
 
   Scenario: Function with complex union type

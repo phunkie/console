@@ -14,6 +14,4 @@ namespace Phunkie\Console\Types;
 /**
  * ADT for REPL control flow.
  */
-abstract class ReplResult
-{
-}
+abstract class ReplResult {}

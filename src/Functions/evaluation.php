@@ -33,8 +33,9 @@ use function Failure;
  */
 function evaluateExpression(string $input, ReplSession $session): Validation
 {
-    return \Phunkie\Console\Functions\parseInput($input)
-        ->flatMap(fn ($ast) => evaluateAst($ast, $session));
+    /** @var Validation<ReplError, array> $parsed */
+    $parsed = \Phunkie\Console\Functions\parseInput($input);
+    return $parsed->flatMap(fn(array $ast) => evaluateAst($ast, $session));
 }
 
 /**
@@ -68,9 +69,9 @@ function evaluateAst(array $ast, ReplSession $session): Validation
 
         // If this is an assignment, we need to track the variable name
         // Skip variable variables ($$var) as they're already handled in evaluateAssignment
-        if ($stmt->expr instanceof Expr\Assign &&
-            $stmt->expr->var instanceof Expr\Variable &&
-            is_string($stmt->expr->var->name)) {
+        if ($stmt->expr instanceof Expr\Assign
+            && $stmt->expr->var instanceof Expr\Variable
+            && is_string($stmt->expr->var->name)) {
             return $result->map(function ($evalResult) use ($stmt) {
                 $varName = '$' . $stmt->expr->var->name;
                 // Create a new result with assignment metadata
@@ -179,116 +180,116 @@ function evaluateAst(array $ast, ReplSession $session): Validation
 function evaluateNode(Node $node, ReplSession $session): Validation
 {
     return match (true) {
-        $node instanceof Scalar\Int_ =>
-            Success(EvaluationResult::of($node->value, 'Int')),
+        $node instanceof Scalar\Int_
+            => Success(EvaluationResult::of($node->value, 'Int')),
 
-        $node instanceof Scalar\Float_ =>
-            Success(EvaluationResult::of($node->value, 'Float')),
+        $node instanceof Scalar\Float_
+            => Success(EvaluationResult::of($node->value, 'Float')),
 
-        $node instanceof Scalar\String_ =>
-            Success(EvaluationResult::of($node->value, 'String')),
+        $node instanceof Scalar\String_
+            => Success(EvaluationResult::of($node->value, 'String')),
 
-        $node instanceof Scalar\InterpolatedString =>
-            evaluateInterpolatedString($node, $session),
+        $node instanceof Scalar\InterpolatedString
+            => evaluateInterpolatedString($node, $session),
 
-        $node instanceof Expr\ConstFetch && $node->name->toString() === 'true' =>
-            Success(EvaluationResult::of(true, 'Bool')),
+        $node instanceof Expr\ConstFetch && $node->name->toString() === 'true'
+            => Success(EvaluationResult::of(true, 'Bool')),
 
-        $node instanceof Expr\ConstFetch && $node->name->toString() === 'false' =>
-            Success(EvaluationResult::of(false, 'Bool')),
+        $node instanceof Expr\ConstFetch && $node->name->toString() === 'false'
+            => Success(EvaluationResult::of(false, 'Bool')),
 
-        $node instanceof Expr\ConstFetch && $node->name->toString() === 'null' =>
-            Success(EvaluationResult::of(null, 'Null')),
+        $node instanceof Expr\ConstFetch && $node->name->toString() === 'null'
+            => Success(EvaluationResult::of(null, 'Null')),
 
-        $node instanceof Expr\ConstFetch && $node->name->toString() === 'None' =>
-            Success(EvaluationResult::of(\None(), getType(\None()))),
+        $node instanceof Expr\ConstFetch && $node->name->toString() === 'None'
+            => Success(EvaluationResult::of(\None(), getType(\None()))),
 
-        $node instanceof Expr\ConstFetch =>
-            evaluateConstant($node),
+        $node instanceof Expr\ConstFetch
+            => evaluateConstant($node),
 
-        $node instanceof Expr\ClassConstFetch =>
-            evaluateClassConstFetch($node, $session),
+        $node instanceof Expr\ClassConstFetch
+            => evaluateClassConstFetch($node, $session),
 
-        $node instanceof Expr\Variable =>
-            evaluateVariableNode($node, $session),
+        $node instanceof Expr\Variable
+            => evaluateVariableNode($node, $session),
 
-        $node instanceof Expr\Assign =>
-            evaluateAssignment($node, $session),
+        $node instanceof Expr\Assign
+            => evaluateAssignment($node, $session),
 
-        $node instanceof Expr\BinaryOp =>
-            evaluateBinaryOp($node, $session),
+        $node instanceof Expr\BinaryOp
+            => evaluateBinaryOp($node, $session),
 
-        $node instanceof Expr\BooleanNot ||
-        $node instanceof Expr\UnaryPlus ||
-        $node instanceof Expr\UnaryMinus ||
-        $node instanceof Expr\BitwiseNot =>
-            evaluateUnaryOp($node, $session),
+        $node instanceof Expr\BooleanNot
+        || $node instanceof Expr\UnaryPlus
+        || $node instanceof Expr\UnaryMinus
+        || $node instanceof Expr\BitwiseNot
+            => evaluateUnaryOp($node, $session),
 
-        $node instanceof Expr\StaticCall =>
-            evaluateStaticCall($node, $session),
+        $node instanceof Expr\StaticCall
+            => evaluateStaticCall($node, $session),
 
-        $node instanceof Expr\MethodCall =>
-            evaluateMethodCall($node, $session),
+        $node instanceof Expr\MethodCall
+            => evaluateMethodCall($node, $session),
 
-        $node instanceof Expr\NullsafeMethodCall =>
-            evaluateNullsafeMethodCall($node, $session),
+        $node instanceof Expr\NullsafeMethodCall
+            => evaluateNullsafeMethodCall($node, $session),
 
-        $node instanceof Expr\PropertyFetch =>
-            evaluatePropertyFetch($node, $session),
+        $node instanceof Expr\PropertyFetch
+            => evaluatePropertyFetch($node, $session),
 
-        $node instanceof Expr\NullsafePropertyFetch =>
-            evaluateNullsafePropertyFetch($node, $session),
+        $node instanceof Expr\NullsafePropertyFetch
+            => evaluateNullsafePropertyFetch($node, $session),
 
-        $node instanceof Expr\FuncCall =>
-            evaluateFunctionCall($node, $session),
+        $node instanceof Expr\FuncCall
+            => evaluateFunctionCall($node, $session),
 
-        $node instanceof Expr\Array_ =>
-            evaluateArray($node, $session),
+        $node instanceof Expr\Array_
+            => evaluateArray($node, $session),
 
-        $node instanceof Expr\ArrayDimFetch =>
-            evaluateArrayAccess($node, $session),
+        $node instanceof Expr\ArrayDimFetch
+            => evaluateArrayAccess($node, $session),
 
-        $node instanceof Expr\ArrowFunction =>
-            evaluateArrowFunction($node, $session),
+        $node instanceof Expr\ArrowFunction
+            => evaluateArrowFunction($node, $session),
 
-        $node instanceof Expr\Closure =>
-            evaluateClosure($node, $session),
+        $node instanceof Expr\Closure
+            => evaluateClosure($node, $session),
 
-        $node instanceof Expr\Ternary =>
-            evaluateTernary($node, $session),
+        $node instanceof Expr\Ternary
+            => evaluateTernary($node, $session),
 
-        $node instanceof Expr\Match_ =>
-            evaluateMatch($node, $session),
+        $node instanceof Expr\Match_
+            => evaluateMatch($node, $session),
 
-        $node instanceof Expr\Yield_ =>
-            evaluateYield($node, $session),
+        $node instanceof Expr\Yield_
+            => evaluateYield($node, $session),
 
-        $node instanceof Expr\New_ =>
-            evaluateNew($node, $session),
+        $node instanceof Expr\New_
+            => evaluateNew($node, $session),
 
-        $node instanceof Expr\Print_ =>
-            evaluatePrint($node, $session),
+        $node instanceof Expr\Print_
+            => evaluatePrint($node, $session),
 
-        $node instanceof Expr\Throw_ =>
-            evaluateThrow($node, $session),
+        $node instanceof Expr\Throw_
+            => evaluateThrow($node, $session),
 
-        $node instanceof Expr\Instanceof_ =>
-            evaluateInstanceof($node, $session),
+        $node instanceof Expr\Instanceof_
+            => evaluateInstanceof($node, $session),
 
-        $node instanceof Expr\Clone_ =>
-            evaluateClone($node, $session),
+        $node instanceof Expr\Clone_
+            => evaluateClone($node, $session),
 
-        $node instanceof Expr\ErrorSuppress =>
-            evaluateErrorSuppress($node, $session),
+        $node instanceof Expr\ErrorSuppress
+            => evaluateErrorSuppress($node, $session),
 
-        $node instanceof Expr\PreInc ||
-        $node instanceof Expr\PreDec ||
-        $node instanceof Expr\PostInc ||
-        $node instanceof Expr\PostDec =>
-            evaluateIncDec($node, $session),
+        $node instanceof Expr\PreInc
+        || $node instanceof Expr\PreDec
+        || $node instanceof Expr\PostInc
+        || $node instanceof Expr\PostDec
+            => evaluateIncDec($node, $session),
 
-        $node instanceof Node\Scalar\MagicConst =>
-            evaluateMagicConstant($node, $session),
+        $node instanceof Node\Scalar\MagicConst
+            => evaluateMagicConstant($node, $session),
 
         default => Failure(new EvaluationError(
             get_class($node),
@@ -309,23 +310,26 @@ function evaluateVariableNode(Expr\Variable $node, ReplSession $session): Valida
     // Check if this is a variable-variable ($$var)
     if ($node->name instanceof Node) {
         // Evaluate the inner expression to get the variable name
-        return evaluateNode($node->name, $session)->flatMap(function ($result) use ($session) {
-            $varName = $result->value;
+        return evaluateNode($node->name, $session)->flatMap(
+            /** @param EvaluationResult $result */
+            function ($result) use ($session) {
+                $varName = $result->value;
 
-            if (!is_string($varName)) {
-                return Failure(new EvaluationError('$$var', 'Variable variable name must be a string'));
+                if (!is_string($varName)) {
+                    return Failure(new EvaluationError('$$var', 'Variable variable name must be a string'));
+                }
+
+                return evaluateVariable($varName, $session);
             }
-
-            return evaluateVariable($varName, $session);
-        });
+        );
     }
 
     // Simple variable - name is a string
-    if (is_string($node->name)) {
-        return evaluateVariable($node->name, $session);
-    }
-
-    return Failure(new EvaluationError('Variable', 'Invalid variable name'));
+    // At this point, if $node->name was a Node it would have been handled above,
+    // so it must be a string
+    /** @var string $varName */
+    $varName = $node->name;
+    return evaluateVariable($varName, $session);
 }
 
 /**
@@ -372,11 +376,11 @@ function evaluateInterpolatedString(Scalar\InterpolatedString $node, ReplSession
             // Convert value to string for interpolation
             $result .= match (true) {
                 is_string($value) => $value,
-                is_numeric($value) => (string)$value,
+                is_numeric($value) => (string) $value,
                 is_bool($value) => $value ? '1' : '',
                 is_null($value) => '',
                 is_array($value) => 'Array',
-                is_object($value) && method_exists($value, '__toString') => (string)$value,
+                is_object($value) && method_exists($value, '__toString') => (string) $value,
                 is_object($value) => get_class($value),
                 default => ''
             };
@@ -390,11 +394,11 @@ function evaluateInterpolatedString(Scalar\InterpolatedString $node, ReplSession
             // Convert value to string for interpolation
             $result .= match (true) {
                 is_string($value) => $value,
-                is_numeric($value) => (string)$value,
+                is_numeric($value) => (string) $value,
                 is_bool($value) => $value ? '1' : '',
                 is_null($value) => '',
                 is_array($value) => 'Array',
-                is_object($value) && method_exists($value, '__toString') => (string)$value,
+                is_object($value) && method_exists($value, '__toString') => (string) $value,
                 is_object($value) => get_class($value),
                 default => ''
             };
@@ -919,7 +923,7 @@ function evaluateFunctionCall(Expr\FuncCall $node, ReplSession $session): Valida
 
         // Check if this is an expression-based function call (e.g., $funcs[0]())
         // This handles cases where the function name is not a simple Name node
-        if (!($node->name instanceof Node\Name) && !($node->name instanceof Expr\Variable)) {
+        if (!($node->name instanceof Node\Name)) {
             // Evaluate the expression to get the callable
             $callableResult = evaluateNode($node->name, $session);
             if ($callableResult->isLeft()) {
@@ -1183,8 +1187,8 @@ function evaluateFunctionCall(Expr\FuncCall $node, ReplSession $session): Valida
 
         // Check if this is an output function that shouldn't get auto-assigned
         $outputFunctions = ['var_dump', 'print_r', 'var_export', 'debug_zval_dump', 'debug_print_backtrace'];
-        $isOutputFunction = in_array(strtolower($funcName), $outputFunctions) ||
-                           in_array(strtolower($resolvedFuncName), $outputFunctions);
+        $isOutputFunction = in_array(strtolower($funcName), $outputFunctions)
+                           || in_array(strtolower($resolvedFuncName), $outputFunctions);
 
         return Success(EvaluationResult::of($value, getType($value), null, [], $isOutputFunction));
     } catch (\TypeError $e) {
@@ -1219,7 +1223,7 @@ function getType(mixed $value): string
         is_float($value) => 'Float',
         is_string($value) => 'String',
         is_array($value) => 'Array',
-        is_callable($value) && is_object($value) && get_class($value) === 'Closure' => 'Callable',
+        $value instanceof \Closure => 'Callable',
         $value instanceof \Generator => 'Generator',
         is_object($value) => getObjectType($value),
         default => 'Unknown'
@@ -1412,7 +1416,7 @@ function evaluateArrowFunction(Expr\ArrowFunction $node, ReplSession $session): 
 
             if ($result->isLeft()) {
                 // Get the error using fold
-                $error = $result->fold(fn ($e) => $e)(fn ($r) => null);
+                $error = $result->fold(fn($e) => $e)(fn($r) => null);
                 throw new \RuntimeException('Arrow function evaluation failed: ' . $error->reason);
             }
 
@@ -1478,7 +1482,7 @@ function evaluateClosure(Expr\Closure $node, ReplSession $session): Validation
                     if ($stmt->expr !== null) {
                         $result = evaluateNode($stmt->expr, $newSession);
                         if ($result->isLeft()) {
-                            $error = $result->fold(fn ($e) => $e)(fn ($r) => null);
+                            $error = $result->fold(fn($e) => $e)(fn($r) => null);
                             throw new \RuntimeException('Closure evaluation failed: ' . $error->reason);
                         }
                         $returnValue = $result->getOrElse(null)->value;
@@ -1487,7 +1491,7 @@ function evaluateClosure(Expr\Closure $node, ReplSession $session): Validation
                 } elseif ($stmt instanceof Node\Stmt\Expression) {
                     $result = evaluateNode($stmt->expr, $newSession);
                     if ($result->isLeft()) {
-                        $error = $result->fold(fn ($e) => $e)(fn ($r) => null);
+                        $error = $result->fold(fn($e) => $e)(fn($r) => null);
                         throw new \RuntimeException('Closure evaluation failed: ' . $error->reason);
                     }
                     // Update session if this is an assignment
@@ -1795,7 +1799,8 @@ function evaluateWhileLoop(Node\Stmt\While_ $stmt, ReplSession $session): Valida
             // Execute loop body and capture variable updates
             $blockResult = evaluateStmtBlockWithSession($stmt->stmts, $loopSession);
             if ($blockResult->isLeft()) {
-                return $blockResult;
+                /** @var \Phunkie\Validation\Failure $blockResult */
+                return Failure($blockResult->fold(fn($e) => $e)(fn($s) => $s));
             }
 
             // Update loop session with any variable changes from the body
@@ -1830,7 +1835,8 @@ function evaluateDoWhileLoop(Node\Stmt\Do_ $stmt, ReplSession $session): Validat
             // Execute loop body and capture variable updates
             $blockResult = evaluateStmtBlockWithSession($stmt->stmts, $loopSession);
             if ($blockResult->isLeft()) {
-                return $blockResult;
+                /** @var \Phunkie\Validation\Failure $blockResult */
+                return Failure($blockResult->fold(fn($e) => $e)(fn($s) => $s));
             }
 
             // Update loop session with any variable changes from the body
@@ -1999,12 +2005,12 @@ function evaluatePrint(Expr\Print_ $node, ReplSession $session): Validation
         } elseif (is_null($value)) {
             // null outputs nothing
         } elseif (is_scalar($value)) {
-            $output = (string)$value;
+            $output = (string) $value;
         } elseif (is_array($value)) {
             $output = 'Array';
         } elseif (is_object($value)) {
             if (method_exists($value, '__toString')) {
-                $output = (string)$value;
+                $output = (string) $value;
             } else {
                 $output = 'Object';
             }
@@ -2246,16 +2252,14 @@ function evaluateIncDec(Expr $node, ReplSession $session): Validation
         }
 
         // Calculate new value based on operation
-        $newValue = match (true) {
-            $node instanceof Expr\PreInc || $node instanceof Expr\PostInc => $currentValue + 1,
-            $node instanceof Expr\PreDec || $node instanceof Expr\PostDec => $currentValue - 1,
-        };
+        $newValue = ($node instanceof Expr\PreInc || $node instanceof Expr\PostInc)
+            ? $currentValue + 1
+            : $currentValue - 1;
 
         // Determine return value (pre-inc/dec returns new value, post-inc/dec returns old value)
-        $returnValue = match (true) {
-            $node instanceof Expr\PreInc || $node instanceof Expr\PreDec => $newValue,
-            $node instanceof Expr\PostInc || $node instanceof Expr\PostDec => $currentValue,
-        };
+        $returnValue = ($node instanceof Expr\PreInc || $node instanceof Expr\PreDec)
+            ? $newValue
+            : $currentValue;
 
         // Update the variable in the session
         // For inc/dec, we return the value but update the variable via additional assignments
@@ -2422,12 +2426,12 @@ function evaluateEchoStatement(Node\Stmt\Echo_ $stmt, ReplSession $session): Val
             } elseif (is_null($value)) {
                 // null outputs nothing
             } elseif (is_scalar($value)) {
-                $output .= (string)$value;
+                $output .= (string) $value;
             } elseif (is_array($value)) {
                 $output .= 'Array';
             } elseif (is_object($value)) {
                 if (method_exists($value, '__toString')) {
-                    $output .= (string)$value;
+                    $output .= (string) $value;
                 } else {
                     $output .= 'Object';
                 }
@@ -2468,8 +2472,7 @@ class StmtBlockResult
     public function __construct(
         public readonly Validation $result,
         public readonly ReplSession $updatedSession
-    ) {
-    }
+    ) {}
 }
 
 /**
@@ -2491,13 +2494,14 @@ function evaluateStmtBlockWithSession(array $stmts, ReplSession $session): Valid
     }
 
     $currentSession = $session;
-    $lastResult = null;
+    $lastResult = Success(EvaluationResult::of(null, 'Null'));
 
     foreach ($stmts as $stmt) {
         if ($stmt instanceof Node\Stmt\Expression) {
             $result = evaluateNode($stmt->expr, $currentSession);
             if ($result->isLeft()) {
-                return $result;
+                /** @var \Phunkie\Validation\Failure $result */
+                return Failure($result->fold(fn($e) => $e)(fn($s) => $s));
             }
             $lastResult = $result;
 
@@ -2535,7 +2539,8 @@ function evaluateStmtBlockWithSession(array $stmts, ReplSession $session): Valid
         } elseif ($stmt instanceof Node\Stmt\Echo_) {
             $result = evaluateEchoStatement($stmt, $currentSession);
             if ($result->isLeft()) {
-                return $result;
+                /** @var \Phunkie\Validation\Failure $result */
+                return Failure($result->fold(fn($e) => $e)(fn($s) => $s));
             }
             $lastResult = $result;
         } else {
@@ -2543,14 +2548,15 @@ function evaluateStmtBlockWithSession(array $stmts, ReplSession $session): Valid
             // (this handles if statements, nested loops, returns, etc.)
             $result = evaluateStmtBlock([$stmt], $currentSession);
             if ($result->isLeft()) {
-                return $result;
+                /** @var \Phunkie\Validation\Failure $result */
+                return Failure($result->fold(fn($e) => $e)(fn($s) => $s));
             }
             $lastResult = $result;
         }
     }
 
     return Success(new StmtBlockResult(
-        $lastResult ?? Success(EvaluationResult::of(null, 'Null')),
+        $lastResult,
         $currentSession
     ));
 }
@@ -2570,7 +2576,7 @@ function evaluateStmtBlock(array $stmts, ReplSession $session): Validation
         return Success(EvaluationResult::of(null, 'Null'));
     }
 
-    $lastResult = null;
+    $lastResult = Success(EvaluationResult::of(null, 'Null'));
 
     foreach ($stmts as $stmt) {
         if ($stmt instanceof Node\Stmt\Return_) {
@@ -2578,7 +2584,7 @@ function evaluateStmtBlock(array $stmts, ReplSession $session): Validation
             if ($stmt->expr !== null) {
                 $result = evaluateNode($stmt->expr, $session);
                 if ($result->isLeft()) {
-                    $error = $result->fold(fn ($e) => $e)(fn ($r) => null);
+                    $error = $result->fold(fn($e) => $e)(fn($r) => null);
                     throw new \RuntimeException('Return expression evaluation failed: ' . $error->reason);
                 }
                 throw new FunctionReturnException($result->getOrElse(null)->value);
@@ -2640,7 +2646,7 @@ function evaluateStmtBlock(array $stmts, ReplSession $session): Validation
         }
     }
 
-    return $lastResult ?? Success(EvaluationResult::of(null, 'Null'));
+    return $lastResult;
 }
 
 /**
@@ -2725,8 +2731,7 @@ function evaluateBinaryOp(Expr\BinaryOp $node, ReplSession $session): Validation
             $node instanceof Expr\BinaryOp\ShiftLeft => $left << $right,
             $node instanceof Expr\BinaryOp\ShiftRight => $left >> $right,
 
-            // Null coalescing
-            $node instanceof Expr\BinaryOp\Coalesce => $left ?? $right,
+            // Note: Coalesce is handled above with short-circuit evaluation
 
             default => throw new \RuntimeException('Unsupported binary operation: ' . get_class($node))
         };
@@ -2743,11 +2748,11 @@ function evaluateBinaryOp(Expr\BinaryOp $node, ReplSession $session): Validation
 /**
  * Evaluates a unary operation.
  *
- * @param Node $node
+ * @param Expr\UnaryPlus|Expr\UnaryMinus|Expr\BooleanNot|Expr\BitwiseNot $node
  * @param ReplSession $session
  * @return Validation<EvaluationError, EvaluationResult>
  */
-function evaluateUnaryOp(Node $node, ReplSession $session): Validation
+function evaluateUnaryOp(Expr $node, ReplSession $session): Validation
 {
     // Evaluate the operand
     $exprResult = evaluateNode($node->expr, $session);
@@ -2757,11 +2762,11 @@ function evaluateUnaryOp(Node $node, ReplSession $session): Validation
     $value = $exprResult->getOrElse(null)->value;
 
     try {
-        $result = match (true) {
-            $node instanceof Expr\UnaryPlus => +$value,
-            $node instanceof Expr\UnaryMinus => -$value,
-            $node instanceof Expr\BooleanNot => !$value,
-            $node instanceof Expr\BitwiseNot => ~$value,
+        $result = match (get_class($node)) {
+            Expr\UnaryPlus::class => +$value,
+            Expr\UnaryMinus::class => -$value,
+            Expr\BooleanNot::class => !$value,
+            Expr\BitwiseNot::class => ~$value,
 
             default => throw new \RuntimeException('Unsupported unary operation: ' . get_class($node))
         };
@@ -2788,10 +2793,8 @@ function evaluateArray(Expr\Array_ $node, ReplSession $session): Validation
         $array = [];
 
         foreach ($node->items as $item) {
-            if ($item === null) {
-                continue;
-            }
-
+            // PHPStan says this is always ArrayItem
+            $key = $item->key;
             // Evaluate the value
             $valueResult = evaluateNode($item->value, $session);
             if ($valueResult->isLeft()) {
@@ -2936,19 +2939,25 @@ function evaluateAssignment(Expr\Assign $node, ReplSession $session): Validation
         // Handle variable variables ($$var = value)
         if ($node->var->name instanceof Expr\Variable || $node->var->name instanceof Node) {
             // Evaluate the variable name
-            return evaluateNode($node->var->name, $session)->flatMap(function ($nameResult) use ($node, $session) {
-                $varName = $nameResult->value;
+            return evaluateNode($node->var->name, $session)->flatMap(
+                /** @param EvaluationResult $nameResult */
+                function ($nameResult) use ($node, $session) {
+                    $varName = $nameResult->value;
 
-                if (!is_string($varName)) {
-                    return Failure(new EvaluationError('$$var', 'Variable variable name must be a string'));
+                    if (!is_string($varName)) {
+                        return Failure(new EvaluationError('$$var', 'Variable variable name must be a string'));
+                    }
+
+                    // Evaluate the value to assign
+                    return evaluateNode($node->expr, $session)->map(
+                        /** @param EvaluationResult $valueResult */
+                        function ($valueResult) use ($varName) {
+                            $value = $valueResult->value;
+                            return EvaluationResult::of($value, getType($value), '$' . $varName);
+                        }
+                    );
                 }
-
-                // Evaluate the value to assign
-                return evaluateNode($node->expr, $session)->map(function ($valueResult) use ($varName) {
-                    $value = $valueResult->value;
-                    return EvaluationResult::of($value, getType($value), '$' . $varName);
-                });
-            });
+            );
         }
 
         $varName = '$' . $node->var->name;
@@ -2983,6 +2992,12 @@ function evaluateAssignment(Expr\Assign $node, ReplSession $session): Validation
 function evaluateArrayElementAssignment(Expr\Assign $node, ReplSession $session): Validation
 {
     try {
+        if (!($node->var instanceof Expr\ArrayDimFetch)) {
+            return Failure(new EvaluationError(
+                'ArrayAssignment',
+                'Expected array dimension fetch, got ' . get_class($node->var)
+            ));
+        }
         $arrayDimFetch = $node->var;
 
         // Get the base variable name
@@ -3053,6 +3068,12 @@ function evaluateArrayElementAssignment(Expr\Assign $node, ReplSession $session)
 function evaluatePropertyAssignment(Expr\Assign $node, ReplSession $session): Validation
 {
     try {
+        if (!($node->var instanceof Expr\PropertyFetch)) {
+            return Failure(new EvaluationError(
+                'PropertyAssignment',
+                'Expected property fetch, got ' . get_class($node->var)
+            ));
+        }
         $propertyFetch = $node->var;
 
         // Navigate to the target object by evaluating the left side except the final property
@@ -3157,7 +3178,14 @@ function evaluateNamespace(Node\Stmt\Namespace_ $stmt, ReplSession $session): Va
 function evaluateListAssignment(Expr\Assign $node, ReplSession $session): Validation
 {
     try {
-        $list = $node->var;
+        if ($node->var instanceof Expr\List_ || $node->var instanceof Expr\Array_) {
+            $list = $node->var;
+        } else {
+            return Failure(new EvaluationError(
+                'ListAssignment',
+                'Expected list() or [...] on left-hand side, got ' . get_class($node->var)
+            ));
+        }
 
         // Evaluate the right-hand side (should be an array)
         $rhsResult = evaluateNode($node->expr, $session);
@@ -3249,12 +3277,10 @@ function isTypeValid(mixed $value, Node\Identifier|Node\Name $type): bool
             'null' => is_null($value),
             default => false
         };
-    } elseif ($type instanceof Node\Name) {
-        // Class/interface type
-        return is_object($value) && is_a($value, $typeName);
     }
 
-    return false;
+    // Class/interface type (this is a Name)
+    return is_object($value) && is_a($value, $typeName);
 }
 
 /**
@@ -3266,19 +3292,15 @@ function isTypeValid(mixed $value, Node\Identifier|Node\Name $type): bool
  */
 function isUnionTypeValid(mixed $value, Node\UnionType $unionType): bool
 {
+    // UnionType->types contains: Identifier | Name | IntersectionType
     foreach ($unionType->types as $type) {
-        if ($type instanceof Node\UnionType) {
-            // Nested union types
-            if (isUnionTypeValid($value, $type)) {
-                return true;
-            }
-        } elseif ($type instanceof Node\IntersectionType) {
-            // Union containing intersection
+        if ($type instanceof Node\IntersectionType) {
+            // Union containing intersection (e.g., (A&B)|C)
             if (isIntersectionTypeValid($value, $type)) {
                 return true;
             }
         } else {
-            // Regular type
+            // Regular type (Identifier or Name)
             if (isTypeValid($value, $type)) {
                 return true;
             }
@@ -3296,22 +3318,11 @@ function isUnionTypeValid(mixed $value, Node\UnionType $unionType): bool
  */
 function isIntersectionTypeValid(mixed $value, Node\IntersectionType $intersectionType): bool
 {
+    // IntersectionType->types contains: Identifier | Name only
     foreach ($intersectionType->types as $type) {
-        if ($type instanceof Node\IntersectionType) {
-            // Nested intersection types
-            if (!isIntersectionTypeValid($value, $type)) {
-                return false;
-            }
-        } elseif ($type instanceof Node\UnionType) {
-            // Intersection containing union (rare but possible)
-            if (!isUnionTypeValid($value, $type)) {
-                return false;
-            }
-        } else {
-            // Regular type
-            if (!isTypeValid($value, $type)) {
-                return false;
-            }
+        // All types in intersection must be Identifier or Name
+        if (!isTypeValid($value, $type)) {
+            return false;
         }
     }
     return true;
@@ -3344,10 +3355,10 @@ function isComplexTypeValid(mixed $value, mixed $type): bool
 function getTypeName(mixed $type): string
 {
     if ($type instanceof Node\UnionType) {
-        $names = array_map(fn ($t) => getTypeName($t), $type->types);
+        $names = array_map(fn($t) => getTypeName($t), $type->types);
         return implode('|', $names);
     } elseif ($type instanceof Node\IntersectionType) {
-        $names = array_map(fn ($t) => getTypeName($t), $type->types);
+        $names = array_map(fn($t) => getTypeName($t), $type->types);
         return implode('&', $names);
     } else {
         return $type->toString();
@@ -3490,7 +3501,7 @@ function evaluateFunctionDefinition(Node\Stmt\Function_ $node, ReplSession $sess
                         // Check if this parameter has a default value
                         if ($param->default === null) {
                             // Required parameter is missing
-                            $expectedCount = count(array_filter($node->params, fn ($p) => $p->default === null));
+                            $expectedCount = count(array_filter($node->params, fn($p) => $p->default === null));
                             throw new \TypeError(
                                 "$funcName() expects at least $expectedCount argument" . ($expectedCount === 1 ? '' : 's') . ", " . count($args) . " given"
                             );
@@ -3535,7 +3546,7 @@ function evaluateFunctionDefinition(Node\Stmt\Function_ $node, ReplSession $sess
                         // Evaluate the default value expression
                         $defaultResult = evaluateNode($param->default, $session);
                         if ($defaultResult->isLeft()) {
-                            $error = $defaultResult->fold(fn ($e) => $e)(fn ($r) => null);
+                            $error = $defaultResult->fold(fn($e) => $e)(fn($r) => null);
                             throw new \RuntimeException('Default parameter evaluation failed: ' . $error->reason);
                         }
                         $defaultValue = $defaultResult->getOrElse(null)->value;
@@ -3558,7 +3569,7 @@ function evaluateFunctionDefinition(Node\Stmt\Function_ $node, ReplSession $sess
                         // Evaluate the yield value
                         $yieldResult = evaluateNode($stmt->expr->value, $newSession);
                         if ($yieldResult->isLeft()) {
-                            $error = $yieldResult->fold(fn ($e) => $e)(fn ($r) => null);
+                            $error = $yieldResult->fold(fn($e) => $e)(fn($r) => null);
                             throw new \RuntimeException('Yield evaluation failed: ' . $error->reason);
                         }
 
@@ -3568,21 +3579,22 @@ function evaluateFunctionDefinition(Node\Stmt\Function_ $node, ReplSession $sess
                         if ($stmt->expr->key !== null) {
                             $keyResult = evaluateNode($stmt->expr->key, $newSession);
                             if ($keyResult->isLeft()) {
-                                $error = $keyResult->fold(fn ($e) => $e)(fn ($r) => null);
+                                $error = $keyResult->fold(fn($e) => $e)(fn($r) => null);
                                 throw new \RuntimeException('Yield key evaluation failed: ' . $error->reason);
                             }
                             yield $keyResult->getOrElse(null)->value => $value;
                         } else {
                             yield $value;
                         }
-                    } else {
-                        // Handle other statements in the function body
+                    } elseif ($stmt instanceof Node\Stmt\Expression) {
+                        // Handle expression statements in the function body
                         $result = evaluateNode($stmt->expr, $newSession);
                         if ($result->isLeft()) {
-                            $error = $result->fold(fn ($e) => $e)(fn ($r) => null);
+                            $error = $result->fold(fn($e) => $e)(fn($r) => null);
                             throw new \RuntimeException('Statement evaluation failed: ' . $error->reason);
                         }
                     }
+                    // Other statement types (Return, etc.) can be ignored here
                 }
             };
         } else {
@@ -3595,7 +3607,7 @@ function evaluateFunctionDefinition(Node\Stmt\Function_ $node, ReplSession $sess
                         // Check if this parameter has a default value
                         if ($param->default === null) {
                             // Required parameter is missing
-                            $expectedCount = count(array_filter($node->params, fn ($p) => $p->default === null));
+                            $expectedCount = count(array_filter($node->params, fn($p) => $p->default === null));
                             throw new \TypeError(
                                 "$funcName() expects at least $expectedCount argument" . ($expectedCount === 1 ? '' : 's') . ", " . count($args) . " given"
                             );
@@ -3640,7 +3652,7 @@ function evaluateFunctionDefinition(Node\Stmt\Function_ $node, ReplSession $sess
                         // Evaluate the default value expression
                         $defaultResult = evaluateNode($param->default, $session);
                         if ($defaultResult->isLeft()) {
-                            $error = $defaultResult->fold(fn ($e) => $e)(fn ($r) => null);
+                            $error = $defaultResult->fold(fn($e) => $e)(fn($r) => null);
                             throw new \RuntimeException('Default parameter evaluation failed: ' . $error->reason);
                         }
                         $defaultValue = $defaultResult->getOrElse(null)->value;
@@ -3664,7 +3676,7 @@ function evaluateFunctionDefinition(Node\Stmt\Function_ $node, ReplSession $sess
                     $result = evaluateStmtBlock($stmtsToEvaluate, $newSession);
 
                     if ($result->isLeft()) {
-                        $error = $result->fold(fn ($e) => $e)(fn ($r) => null);
+                        $error = $result->fold(fn($e) => $e)(fn($r) => null);
                         throw new \RuntimeException('Function body evaluation failed: ' . $error->reason);
                     }
 
@@ -3995,12 +4007,12 @@ function evaluateInterfaceDefinition(Node\Stmt\Interface_ $interfaceNode, ReplSe
         if ($interfaceName === null) {
             return Failure(new EvaluationError(
                 'Interface',
-                'Interface must have a name'
+                'Interface name must be a string'
             ));
         }
 
         // Check if interface already exists
-        if (interface_exists($interfaceName, false)) {
+        if ($session->isEntityDefined($interfaceName, 'interface')) {
             return Failure(new EvaluationError(
                 $interfaceName,
                 "Interface $interfaceName already exists"
@@ -4025,8 +4037,8 @@ function evaluateInterfaceDefinition(Node\Stmt\Interface_ $interfaceNode, ReplSe
         $code = $printer->prettyPrint([$interfaceNode]);
 
         // Add namespace context if needed
-        if (isset($session->namespace) && !$session->namespace->isEmpty()) {
-            $namespace = $session->namespace->get();
+        if ($session->currentNamespace !== null) {
+            $namespace = $session->currentNamespace;
             $code = "namespace $namespace;\n" . $code;
         }
 
@@ -4051,7 +4063,7 @@ function evaluateInterfaceDefinition(Node\Stmt\Interface_ $interfaceNode, ReplSe
         }
 
         // Verify interface was created
-        if (!interface_exists($interfaceName, false)) {
+        if (!$session->isEntityDefined($interfaceName, 'interface', 1)) {
             return Failure(new EvaluationError(
                 $interfaceName,
                 'Failed to define interface'
@@ -4106,8 +4118,8 @@ function evaluateTraitDefinition(Node\Stmt\Trait_ $traitNode, ReplSession $sessi
         $code = $printer->prettyPrint([$traitNode]);
 
         // Add namespace context if needed
-        if (isset($session->namespace) && !$session->namespace->isEmpty()) {
-            $namespace = $session->namespace->get();
+        if ($session->currentNamespace !== null) {
+            $namespace = $session->currentNamespace;
             $code = "namespace $namespace;\n" . $code;
         }
 
@@ -4132,7 +4144,7 @@ function evaluateTraitDefinition(Node\Stmt\Trait_ $traitNode, ReplSession $sessi
         }
 
         // Verify trait was created
-        if (!trait_exists($traitName, false)) {
+        if (!$session->isEntityDefined($traitName, 'trait', 1)) {
             return Failure(new EvaluationError(
                 $traitName,
                 'Failed to define trait'
@@ -4241,7 +4253,7 @@ function evaluateClassDefinition(Node\Stmt\Class_ $classNode, ReplSession $sessi
         }
 
         // Verify the class was defined
-        if (!class_exists($className, false)) {
+        if (!$session->isEntityDefined($className, 'class', 1)) {
             return Failure(new EvaluationError(
                 $className,
                 "Failed to define class '$className'"
@@ -4295,3 +4307,13 @@ function cleanErrorMessage(string $message): string
 
     return trim($message);
 }
+
+/**
+ * Checks if a class, interface, or trait exists at runtime.
+ * This helper isolates dynamic existence checks to prevent PHPStan from
+ * inferring "always false" based on static codebase analysis.
+ *
+ * @param string $name
+ * @param string $kind 'class', 'interface', or 'trait'
+ * @return bool
+ */

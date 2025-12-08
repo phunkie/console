@@ -8,8 +8,9 @@ use Tests\Acceptance\ReplSteps;
 return (new Config())
     ->withProfile(
         (new Profile('default'))
-            ->withSuite((new Suite('default'))
+            ->withSuite(
+                (new Suite('default'))
                 ->withContexts(ReplSteps::class)
-        )
+            )
     )
 ;

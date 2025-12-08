@@ -16,8 +16,7 @@ final class ParseError extends ReplError
     public function __construct(
         public readonly string $input,
         public readonly string $reason
-    ) {
-    }
+    ) {}
 
     public function message(): string
     {

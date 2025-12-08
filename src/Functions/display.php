@@ -26,21 +26,21 @@ function printHelp(): IO
 {
     $help = <<<HELP
 
-Phunkie Console - REPL Commands:
+        Phunkie Console - REPL Commands:
 
-  :help           Show this help message
-  :exit           Exit the REPL (also :quit, Ctrl-C, Ctrl-D)
-  :vars           List all defined variables
-  :history        Show command history
-  :reset          Reset the REPL state (clear all variables and history)
-  :load <file>    Load a .phunkie or .php file (functions & classes become available)
+          :help           Show this help message
+          :exit           Exit the REPL (also :quit, Ctrl-C, Ctrl-D)
+          :vars           List all defined variables
+          :history        Show command history
+          :reset          Reset the REPL state (clear all variables and history)
+          :load <file>    Load a .phunkie or .php file (functions & classes become available)
 
-Evaluate any PHP expression or Phunkie data structure:
-  Some(42)
-  ImmList(1, 2, 3)
-  \$var0->map(fn(\$x) => \$x + 1)
+        Evaluate any PHP expression or Phunkie data structure:
+          Some(42)
+          ImmList(1, 2, 3)
+          \$var0->map(fn(\$x) => \$x + 1)
 
-HELP;
+        HELP;
 
     return printLn($help);
 }

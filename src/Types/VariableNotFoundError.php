@@ -15,8 +15,7 @@ final class VariableNotFoundError extends ReplError
 {
     public function __construct(
         public readonly string $variableName
-    ) {
-    }
+    ) {}
 
     public function message(): string
     {

@@ -22,8 +22,7 @@ class TypeError extends ReplError
     public function __construct(
         public readonly string $subject,
         public readonly string $reason
-    ) {
-    }
+    ) {}
 
     public function message(): string
     {
