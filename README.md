@@ -1,6 +1,6 @@
 # Phunkie Console
 
-[![Tests](https://github.com/phunkie/console/workflows/Tests/badge.svg)](https://github.com/phunkie/console/actions)
+[![CI](https://github.com/phunkie/console/actions/workflows/ci.yml/badge.svg)](https://github.com/phunkie/console/actions)
 [![PHP Version](https://img.shields.io/packagist/php-v/phunkie/console?color=8892BF)](https://packagist.org/packages/phunkie/console)
 [![Latest Stable Version](https://img.shields.io/packagist/v/phunkie/console)](https://packagist.org/packages/phunkie/console)
 [![Total Downloads](https://img.shields.io/packagist/dt/phunkie/console)](https://packagist.org/packages/phunkie/console)

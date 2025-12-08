@@ -16,6 +16,8 @@ jobs:
     name: PHP ${{ matrix.php-version }}
     steps:
     - uses: actions/checkout@v4
+    - name: Unset local path repositories
+      run: composer config --unset repositories
     - name: Setup PHP
       uses: shivammathur/setup-php@v2
       with:
@@ -40,29 +42,39 @@ jobs:
       run: ./bin/run-behat-tests.sh
 
   lint:
-    name: Code Style (PHP-CS-Fixer)
+    name: PHP ${{ matrix.php-version }} Code Style (PHP-CS-Fixer)
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php-version: ['8.2', '8.3', '8.4']
     steps:
       - uses: actions/checkout@v4
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: 8.3
+          php-version: ${{ matrix.php-version }}
           extensions: mbstring, readline
           coverage: none
           tools: php-cs-fixer
       - name: Run PHP-CS-Fixer
-        run: php-cs-fixer fix --dry-run --diff --verbose
+        run: php-cs-fixer fix --dry-run --diff --verbose --allow-risky=yes
 
   static-analysis:
-    name: Static Analysis (PHPStan)
+    name: PHP ${{ matrix.php-version }} Static Analysis (PHPStan)
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        php-version: ['8.2', '8.3', '8.4']
     steps:
       - uses: actions/checkout@v4
+      - name: Unset local path repositories
+        run: composer config --unset repositories
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
-          php-version: 8.3
+          php-version: ${{ matrix.php-version }}
           extensions: mbstring, readline
           coverage: none
       - name: Install dependencies
