@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "39e510a206d77bda1a91571688c1621d",
+    "content-hash": "7f67a46ed1d213095b7a3965191f1d36",
     "packages": [
         {
             "name": "nikic/php-parser",
@@ -1557,16 +1557,16 @@
         },
         {
             "name": "phunkie/phpstan",
-            "version": "dev-main",
+            "version": "1.0.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phunkie/phpstan.git",
-                "reference": "9e2e9386bef5fa35adcc306106172160c5e78fb3"
+                "reference": "91dd9931edc1fb81d5a5d5eb61179a87e77f8bc6"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phunkie/phpstan/zipball/9e2e9386bef5fa35adcc306106172160c5e78fb3",
-                "reference": "9e2e9386bef5fa35adcc306106172160c5e78fb3",
+                "url": "https://api.github.com/repos/phunkie/phpstan/zipball/91dd9931edc1fb81d5a5d5eb61179a87e77f8bc6",
+                "reference": "91dd9931edc1fb81d5a5d5eb61179a87e77f8bc6",
                 "shasum": ""
             },
             "require": {
@@ -1578,7 +1578,6 @@
                 "phunkie/effect": "dev-developing-1.0.0 as 1.0.0",
                 "phunkie/phunkie": "dev-developing-1.0.0 as 1.0.0"
             },
-            "default-branch": true,
             "type": "phpstan-extension",
             "extra": {
                 "phpstan": {
@@ -1607,7 +1606,7 @@
                 "issues": "https://github.com/phunkie/phpstan/issues",
                 "source": "https://github.com/phunkie/phpstan/tree/1.0.0"
             },
-            "time": "2025-12-08T11:09:04+00:00"
+            "time": "2025-12-08T18:01:33+00:00"
         },
         {
             "name": "psr/container",
@@ -5319,7 +5318,6 @@
     "minimum-stability": "stable",
     "stability-flags": {
         "phunkie/effect": 20,
-        "phunkie/phpstan": 20,
         "phunkie/phunkie": 20
     },
     "prefer-stable": false,
