@@ -70,7 +70,7 @@
             "dist": {
                 "type": "path",
                 "url": "../effect",
-                "reference": "aeb112f585c7f75ddf4c585a7fd53c8486cdb953"
+                "reference": "690ef14faad984740ef8d6bc2a8f1bded54dbd12"
             },
             "require": {
                 "php": "^8.2 || ^8.3 || ^8.4",
@@ -144,7 +144,7 @@
             "dist": {
                 "type": "path",
                 "url": "../phunkie",
-                "reference": "9ddcbe0fa2dc433f88007a2223d2162ad2c3f303"
+                "reference": "d961f2fc1ba80ab20b2106e95ae7d29d439c0d68"
             },
             "require": {
                 "php": "^8.2 || ^8.3 || ^8.4"
