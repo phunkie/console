@@ -16,8 +16,7 @@ jobs:
     name: PHP ${{ matrix.php-version }}
     steps:
     - uses: actions/checkout@v4
-    - name: Unset local path repositories
-      run: composer config --unset repositories
+
     - name: Setup PHP
       uses: shivammathur/setup-php@v2
       with:
@@ -26,6 +25,10 @@ jobs:
         coverage: none
     - name: Validate composer.json and composer.lock
       run: composer validate --strict
+    - name: Unset local path repositories
+      run: |
+        composer config --unset repositories
+        rm composer.lock
     - name: Cache Composer packages
       id: composer-cache
       uses: actions/cache@v3
@@ -35,7 +38,7 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-php-${{ matrix.php-version }}-
     - name: Install dependencies
-      run: composer install --prefer-dist --no-progress
+      run: composer update --prefer-dist --no-progress
     - name: Run PHPUnit tests
       run: ./vendor/bin/phpunit --testdox
     - name: Run Behat tests (version-aware)
@@ -70,7 +73,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Unset local path repositories
-        run: composer config --unset repositories
+        run: |
+          composer config --unset repositories
+          rm composer.lock
       - name: Setup PHP
         uses: shivammathur/setup-php@v2
         with:
@@ -78,6 +83,6 @@ jobs:
           extensions: mbstring, readline
           coverage: none
       - name: Install dependencies
-        run: composer install --prefer-dist --no-progress
+        run: composer update --prefer-dist --no-progress
       - name: Run PHPStan
         run: vendor/bin/phpstan analyse src
