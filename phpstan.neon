@@ -3,7 +3,7 @@ includes:
 
 parameters:
     level: 5
-    parallel:
-        maximumNumberOfProcesses: 1
+    bootstrapFiles:
+        - scripts/phpstan-bootstrap.php
     paths:
         - src
