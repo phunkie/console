@@ -88,21 +88,36 @@ use function Phunkie\Console\Functions\{setColors, printBanner, loadHistory, sav
 
         // Try to load the class file directly if it exists (for dynamically created files)
         // This handles cases where composer's autoloader cache doesn't see new files
+        // Convert namespace to path, handling the Tests -> tests directory mapping
         $classFile = str_replace('\\', '/', $className) . '.php';
+        $testsRelativePath = str_replace('Tests/', '', $classFile);
+
         $possiblePaths = [
+            // Most likely: tests directory with lowercase 't' (Linux/CI compatible)
+            getcwd() . '/tests/' . $testsRelativePath,
+            __DIR__ . '/../tests/' . $testsRelativePath,
+            // Also check uppercase Tests for compatibility
             getcwd() . '/' . $classFile,
             __DIR__ . '/../' . $classFile,
-            __DIR__ . '/../tests/' . str_replace('Tests/', '', $classFile),
         ];
+
         foreach ($possiblePaths as $path) {
             if (file_exists($path) && !class_exists($className, false)) {
-                require_once $path;
+                try {
+                    require_once $path;
+                } catch (\Throwable $e) {
+                    fwrite(STDERR, "Error loading $path: " . $e->getMessage() . "\n");
+                }
                 break;
             }
         }
 
         if (class_exists($className) && is_subclass_of($className, IOApp::class)) {
-            $app = new $className();
+            try {
+                $app = new $className();
+            } catch (\Throwable $e) {
+                fwrite(STDERR, "Error instantiating $className: " . $e->getMessage() . "\n");
+            }
         }
     }
 
@@ -110,7 +125,13 @@ use function Phunkie\Console\Functions\{setColors, printBanner, loadHistory, sav
         $app = new PhunkieConsole();
     }
 
-    $app->run($args)->unsafeRun();
+    try {
+        $app->run($args)->unsafeRun();
+    } catch (\Throwable $e) {
+        fwrite(STDERR, get_class($e) . ": " . $e->getMessage() . "\n");
+        fwrite(STDERR, "In " . $e->getFile() . ":" . $e->getLine() . "\n");
+        exit(1);
+    }
 })();
 
 
