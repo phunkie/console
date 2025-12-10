@@ -56,6 +56,14 @@ class ReplSteps implements Context
                 $newOutput = ReplOutputReader::readOutput($stdout);
                 $this->output .= $newOutput;
             }
+            // Also capture stderr for debugging
+            $stderr = $this->processManager->getStderr();
+            if ($stderr !== null) {
+                $errorOutput = ReplOutputReader::readOutput($stderr);
+                if ($errorOutput !== '') {
+                    $this->output .= "\n[STDERR]: " . $errorOutput;
+                }
+            }
         } else {
             $colorEnabled = str_contains($command, '-c');
             $this->directManager->start($colorEnabled);
