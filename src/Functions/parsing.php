@@ -15,6 +15,7 @@ use PhpParser\Error;
 use PhpParser\ParserFactory;
 use Phunkie\Console\Types\ParseError;
 use Phunkie\Validation\Validation;
+
 use function Success;
 use function Failure;
 
@@ -27,7 +28,7 @@ use function Failure;
 function parseInput(string $input): Validation
 {
     try {
-        $parser = (new ParserFactory)->createForNewestSupportedVersion();
+        $parser = (new ParserFactory())->createForNewestSupportedVersion();
 
         // Preprocess: Don't add extra semicolons - PHP-Parser handles this
         // The original regex was causing issues with empty blocks and method definitions

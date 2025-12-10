@@ -52,8 +52,9 @@ function modifySession(callable $f): State
  */
 function addToHistory(string $expression): State
 {
-    return modifySession(fn(ReplSession $s) =>
-        new ReplSession(
+    return modifySession(
+        fn(ReplSession $s)
+        => new ReplSession(
             $s->history->append($expression),
             $s->variables,
             $s->colorEnabled,
@@ -70,12 +71,13 @@ function addToHistory(string $expression): State
  *
  * @param string $name
  * @param mixed $value
- * @return State<ReplSession, Unit>
+ * @return State<ReplSession, null>
  */
 function setVariable(string $name, mixed $value): State
 {
-    return modifySession(fn(ReplSession $s) =>
-        new ReplSession(
+    return modifySession(
+        fn(ReplSession $s)
+        => new ReplSession(
             $s->history,
             $s->variables->plus($name, $value),
             $s->colorEnabled,
@@ -91,7 +93,7 @@ function setVariable(string $name, mixed $value): State
  * Gets a variable from the session.
  *
  * @param string $name
- * @return State<ReplSession, Option>
+ * @return State<ReplSession, \Phunkie\Types\Option>
  */
 function getVariable(string $name): State
 {
@@ -105,7 +107,7 @@ function getVariable(string $name): State
  */
 function nextVariable(): State
 {
-    return new State(function(ReplSession $s): Pair {
+    return new State(function (ReplSession $s): Pair {
         $varName = '$var' . $s->variableCounter;
         $newSession = new ReplSession(
             $s->history,
@@ -148,8 +150,9 @@ function getHistory(): State
  */
 function setColors(bool $enabled): State
 {
-    return modifySession(fn(ReplSession $s) =>
-        new ReplSession(
+    return modifySession(
+        fn(ReplSession $s)
+        => new ReplSession(
             $s->history,
             $s->variables,
             $enabled,
@@ -178,8 +181,9 @@ function isColorEnabled(): State
  */
 function resetSession(): State
 {
-    return modifySession(fn(ReplSession $s) =>
-        new ReplSession(
+    return modifySession(
+        fn(ReplSession $s)
+        => new ReplSession(
             ImmList(),
             ImmMap(),
             $s->colorEnabled,
@@ -199,8 +203,9 @@ function resetSession(): State
  */
 function setNamespace(?string $namespace): State
 {
-    return modifySession(fn(ReplSession $s) =>
-        new ReplSession(
+    return modifySession(
+        fn(ReplSession $s)
+        => new ReplSession(
             $s->history,
             $s->variables,
             $s->colorEnabled,
@@ -231,8 +236,9 @@ function getCurrentNamespace(): State
  */
 function addUseStatement(string $alias, string $fullName): State
 {
-    return modifySession(fn(ReplSession $s) =>
-        new ReplSession(
+    return modifySession(
+        fn(ReplSession $s)
+        => new ReplSession(
             $s->history,
             $s->variables,
             $s->colorEnabled,

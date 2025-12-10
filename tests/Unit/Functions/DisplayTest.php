@@ -14,6 +14,7 @@ namespace Tests\Phunkie\Console\Functions;
 use PHPUnit\Framework\TestCase;
 use Phunkie\Console\Types\ReplSession;
 use Phunkie\Effect\IO\IO;
+
 use function Phunkie\Console\Functions\{printHelp, printVariables, printHistory, printBanner};
 
 class DisplayTest extends TestCase
