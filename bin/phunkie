@@ -85,6 +85,22 @@ use function Phunkie\Console\Functions\{setColors, printBanner, loadHistory, sav
 
     if (isset($args[1]) && !str_starts_with($args[1], '-')) {
         $className = $args[1];
+
+        // Try to load the class file directly if it exists (for dynamically created files)
+        // This handles cases where composer's autoloader cache doesn't see new files
+        $classFile = str_replace('\\', '/', $className) . '.php';
+        $possiblePaths = [
+            getcwd() . '/' . $classFile,
+            __DIR__ . '/../' . $classFile,
+            __DIR__ . '/../tests/' . str_replace('Tests/', '', $classFile),
+        ];
+        foreach ($possiblePaths as $path) {
+            if (file_exists($path) && !class_exists($className, false)) {
+                require_once $path;
+                break;
+            }
+        }
+
         if (class_exists($className) && is_subclass_of($className, IOApp::class)) {
             $app = new $className();
         }
