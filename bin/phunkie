@@ -101,35 +101,54 @@ use function Phunkie\Console\Functions\{setColors, printBanner, loadHistory, sav
             __DIR__ . '/../' . $classFile,
         ];
 
+        $fileLoaded = false;
         foreach ($possiblePaths as $path) {
             if (file_exists($path) && !class_exists($className, false)) {
                 try {
                     require_once $path;
+                    $fileLoaded = true;
                 } catch (\Throwable $e) {
-                    fwrite(STDERR, "Error loading $path: " . $e->getMessage() . "\n");
+                    echo "[DEBUG] Error loading $path: " . get_class($e) . ": " . $e->getMessage() . "\n";
                 }
                 break;
             }
         }
 
-        if (class_exists($className) && is_subclass_of($className, IOApp::class)) {
+        // Debug: check class status after loading attempt
+        $classExists = class_exists($className, true);
+        $isIOApp = $classExists && is_subclass_of($className, IOApp::class);
+
+        if (!$classExists) {
+            echo "[DEBUG] Class $className not found after loading attempt. fileLoaded=$fileLoaded\n";
+            echo "[DEBUG] Checked paths:\n";
+            foreach ($possiblePaths as $path) {
+                echo "[DEBUG]   $path exists=" . (file_exists($path) ? 'yes' : 'no') . "\n";
+            }
+        }
+
+        if ($classExists && $isIOApp) {
             try {
                 $app = new $className();
             } catch (\Throwable $e) {
-                fwrite(STDERR, "Error instantiating $className: " . $e->getMessage() . "\n");
+                echo "[DEBUG] Error instantiating $className: " . get_class($e) . ": " . $e->getMessage() . "\n";
             }
+        } elseif ($classExists && !$isIOApp) {
+            echo "[DEBUG] Class $className exists but is not an IOApp\n";
         }
     }
 
     if ($app === null) {
+        if (isset($className)) {
+            echo "[DEBUG] Falling back to PhunkieConsole (requested class: $className)\n";
+        }
         $app = new PhunkieConsole();
     }
 
     try {
         $app->run($args)->unsafeRun();
     } catch (\Throwable $e) {
-        fwrite(STDERR, get_class($e) . ": " . $e->getMessage() . "\n");
-        fwrite(STDERR, "In " . $e->getFile() . ":" . $e->getLine() . "\n");
+        echo "[DEBUG] Exception during run: " . get_class($e) . ": " . $e->getMessage() . "\n";
+        echo "[DEBUG] In " . $e->getFile() . ":" . $e->getLine() . "\n";
         exit(1);
     }
 })();

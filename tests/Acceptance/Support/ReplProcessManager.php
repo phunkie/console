@@ -80,6 +80,14 @@ class ReplProcessManager
         return $this->process !== null;
     }
 
+    public function getStatus(): ?array
+    {
+        if ($this->process === null) {
+            return null;
+        }
+        return proc_get_status($this->process);
+    }
+
     public function terminate(): void
     {
         if ($this->process !== null) {
