@@ -86,71 +86,16 @@ use function Phunkie\Console\Functions\{setColors, printBanner, loadHistory, sav
     if (isset($args[1]) && !str_starts_with($args[1], '-')) {
         $className = $args[1];
 
-        // Try to load the class file directly if it exists (for dynamically created files)
-        // This handles cases where composer's autoloader cache doesn't see new files
-        // Convert namespace to path, handling the Tests -> tests directory mapping
-        $classFile = str_replace('\\', '/', $className) . '.php';
-        $testsRelativePath = str_replace('Tests/', '', $classFile);
-
-        $possiblePaths = [
-            // Most likely: tests directory with lowercase 't' (Linux/CI compatible)
-            getcwd() . '/tests/' . $testsRelativePath,
-            __DIR__ . '/../tests/' . $testsRelativePath,
-            // Also check uppercase Tests for compatibility
-            getcwd() . '/' . $classFile,
-            __DIR__ . '/../' . $classFile,
-        ];
-
-        $fileLoaded = false;
-        foreach ($possiblePaths as $path) {
-            if (file_exists($path) && !class_exists($className, false)) {
-                try {
-                    require_once $path;
-                    $fileLoaded = true;
-                } catch (\Throwable $e) {
-                    echo "[DEBUG] Error loading $path: " . get_class($e) . ": " . $e->getMessage() . "\n";
-                }
-                break;
-            }
-        }
-
-        // Debug: check class status after loading attempt
-        $classExists = class_exists($className, true);
-        $isIOApp = $classExists && is_subclass_of($className, IOApp::class);
-
-        if (!$classExists) {
-            echo "[DEBUG] Class $className not found after loading attempt. fileLoaded=$fileLoaded\n";
-            echo "[DEBUG] Checked paths:\n";
-            foreach ($possiblePaths as $path) {
-                echo "[DEBUG]   $path exists=" . (file_exists($path) ? 'yes' : 'no') . "\n";
-            }
-        }
-
-        if ($classExists && $isIOApp) {
-            try {
-                $app = new $className();
-            } catch (\Throwable $e) {
-                echo "[DEBUG] Error instantiating $className: " . get_class($e) . ": " . $e->getMessage() . "\n";
-            }
-        } elseif ($classExists && !$isIOApp) {
-            echo "[DEBUG] Class $className exists but is not an IOApp\n";
+        if (class_exists($className) && is_subclass_of($className, IOApp::class)) {
+            $app = new $className();
         }
     }
 
     if ($app === null) {
-        if (isset($className)) {
-            echo "[DEBUG] Falling back to PhunkieConsole (requested class: $className)\n";
-        }
         $app = new PhunkieConsole();
     }
 
-    try {
-        $app->run($args)->unsafeRun();
-    } catch (\Throwable $e) {
-        echo "[DEBUG] Exception during run: " . get_class($e) . ": " . $e->getMessage() . "\n";
-        echo "[DEBUG] In " . $e->getFile() . ":" . $e->getLine() . "\n";
-        exit(1);
-    }
+    $app->run($args)->unsafeRun();
 })();
 
 
