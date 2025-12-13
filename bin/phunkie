@@ -85,6 +85,7 @@ use function Phunkie\Console\Functions\{setColors, printBanner, loadHistory, sav
 
     if (isset($args[1]) && !str_starts_with($args[1], '-')) {
         $className = $args[1];
+
         if (class_exists($className) && is_subclass_of($className, IOApp::class)) {
             $app = new $className();
         }
