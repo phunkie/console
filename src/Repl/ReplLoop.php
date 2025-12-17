@@ -15,8 +15,11 @@ use Phunkie\Console\Types\ReplSession;
 use Phunkie\Console\Types\EvaluationResult;
 use Phunkie\Console\Types\ContinueRepl;
 use Phunkie\Console\Types\ExitRepl;
+use Phunkie\Console\Types\ReplResult;
+use Phunkie\Console\Types\ReplError;
 use Phunkie\Effect\IO\IO;
 use Phunkie\Utils\Trampoline\Trampoline;
+
 use function Phunkie\Effect\Functions\console\printLn;
 use function Phunkie\Console\Functions\{evaluateExpression, addToHistory, setVariable, nextVariable, isColorEnabled, printHelp, printVariables, printHistory, printBanner, readLineFiltered, resetSession, setNamespace, addUseStatement};
 use function Phunkie\Functions\trampoline\{More, Done};
@@ -295,18 +298,18 @@ function processCommand(string $command, ReplSession $session): IO
     }
 
     // Check for :kind command with expression argument
-    if (preg_match('/^:kind\s+(.+)$/', $command, $matches)) {
+    if (preg_match('/^:(?:kind|k)\s+(.+)$/', $command, $matches)) {
         return showKindCommand(trim($matches[1]), $session);
     }
 
     return match ($command) {
         ':exit', ':quit' => new IO(fn() => new ExitRepl()),
-        ':help' => printHelp()->map(fn() => new ContinueRepl($session)),
-        ':vars' => printVariables($session)->map(fn() => new ContinueRepl($session)),
-        ':history' => printHistory($session)->map(fn() => new ContinueRepl($session)),
+        ':help' => printHelp()->as(new ContinueRepl($session)),
+        ':vars' => printVariables($session)->as(new ContinueRepl($session)),
+        ':history' => printHistory($session)->as(new ContinueRepl($session)),
         ':reset' => resetReplState($session),
         default => printLn("Unknown command: $command")
-            ->map(fn() => new ContinueRepl($session))
+            ->as(new ContinueRepl($session))
     };
 }
 
@@ -334,7 +337,7 @@ function resetReplState(ReplSession $session): IO
  */
 function loadFile(string $filepath, ReplSession $session): IO
 {
-    return new IO(function() use ($filepath, $session) {
+    return new IO(function () use ($filepath, $session) {
         // Check if file exists
         if (!file_exists($filepath)) {
             printLn("Error: File not found: $filepath")->unsafeRun();
@@ -434,7 +437,7 @@ function findModuleFile(string $package, string $packagePath, string $module): ?
  */
 function importFunction(string $import, ReplSession $session): IO
 {
-    return new IO(function() use ($import, $session) {
+    return new IO(function () use ($import, $session) {
         // Parse package::module/function or module/function pattern
         $package = 'phunkie'; // Default to core phunkie
         $packagePath = 'Phunkie/Functions';
@@ -490,10 +493,10 @@ function importFunction(string $import, ReplSession $session): IO
         $availableFunctions = $functionMatches[1];
 
         // Filter out internal functions (those starting with assert or format)
-        $exportedFunctions = array_filter($availableFunctions, function($name) {
+        $exportedFunctions = array_filter($availableFunctions, function ($name) {
             return !in_array($name, ['assertListOrString', 'formatError', 'ImmList', 'Nil', 'Cons',
-                                      'ImmSet', 'ImmMap', 'Pair', 'Some', 'None', 'Success', 'Failure',
-                                      'Unit', 'Tuple', 'Function1']);
+                'ImmSet', 'ImmMap', 'Pair', 'Some', 'None', 'Success', 'Failure',
+                'Unit', 'Tuple', 'Function1']);
         });
 
         // Determine which functions to import
@@ -557,19 +560,19 @@ function importFunction(string $import, ReplSession $session): IO
  */
 function showTypeCommand(string $expression, ReplSession $session): IO
 {
-    return new IO(function() use ($expression, $session) {
+    return new IO(function () use ($expression, $session) {
         // Evaluate the expression to get the value
         $result = evaluateExpression($expression, $session);
 
         // Use fold to handle both success and failure cases
         $result->fold(
             // Failure case: error is passed to this function
-            function($error) use ($session) {
+            function ($error) use ($session) {
                 printLn(formatError($error, $session))->unsafeRun();
             }
         )(
             // Success case: result is passed to this function
-            function($evalResult) {
+            function ($evalResult) {
                 // Use Phunkie's showType function to get the type
                 $type = \Phunkie\Functions\show\showType($evalResult->value);
                 printLn($type)->unsafeRun();
@@ -591,53 +594,50 @@ function showTypeCommand(string $expression, ReplSession $session): IO
  */
 function showKindCommand(string $expression, ReplSession $session): IO
 {
-    return new IO(function() use ($expression, $session) {
+    return new IO(function () use ($expression, $session) {
         // Evaluate the expression to get the value
         $result = evaluateExpression($expression, $session);
 
         // Use fold to handle both success and failure cases
         $result->fold(
             // Failure case: error is passed to this function
-            function($error) use ($session) {
+            function ($error) use ($session) {
                 printLn(formatError($error, $session))->unsafeRun();
             }
         )(
             // Success case: result is passed to this function
-            function($evalResult) {
+            function ($evalResult) {
                 // Get the type of the value
                 $type = \Phunkie\Functions\show\showType($evalResult->value);
 
-                // Get the actual class name for more accurate kind lookup
-                $value = $evalResult->value;
-                $className = is_object($value) ? get_class($value) : null;
-
-                // Extract base type name for showKind
+                // For :kind command on a value, we usually want the kind of the type constructor
+                // e.g. Some(1) -> Option<Int> -> we want kind of "Option" (* -> *)
+                // If we passed "Option<Int>" to showKind, we'd get "*"
                 $baseType = $type;
 
-                // Handle special cases
-                if ($className === 'Phunkie\Types\None') {
+                // Handle None -> Option
+                if ($type === 'None') {
                     $baseType = 'Option';
-                } elseif ($className === 'Phunkie\Types\Pair') {
+                }
+
+                // Handle Tuple syntax (Int, String) -> Pair
+                elseif (str_starts_with($type, '(') && str_contains($type, ',')) {
                     $baseType = 'Pair';
                 } elseif (preg_match('/^([^<(]+)/', $type, $matches)) {
-                    // Remove type parameters: "Option<Int>" -> "Option", "List<Int>" -> "List"
                     $baseType = $matches[1];
                 }
 
-                // Use Phunkie's showKind function to get the kind
-                $kindOption = \Phunkie\Functions\show\showKind($baseType);
-
-                if ($kindOption->isDefined()) {
+                $kind = \Phunkie\Functions\show\showKind($baseType);
+                if ($kind->isDefined()) {
                     // Extract just the kind signature (e.g., "* -> *")
-                    $kindInfo = $kindOption->get();
-                    // Parse the kind info to extract just the signature
+                    $kindInfo = $kind->get();
                     if (preg_match('/:: (.+)$/', $kindInfo, $matches)) {
                         printLn($matches[1])->unsafeRun();
                     } else {
                         printLn($kindInfo)->unsafeRun();
                     }
                 } else {
-                    printLn("Error: Could not determine kind for type: $baseType")->unsafeRun();
+                    printLn("Error: Could not calculate kind for: $type ($baseType)")->unsafeRun();
                 }
             }
         );
@@ -646,37 +646,25 @@ function showKindCommand(string $expression, ReplSession $session): IO
     });
 }
 
+
+
 /**
- * Formats an error message with optional color support.
+ * Formats an error message for display.
  *
- * @param \Phunkie\Console\Types\ReplError $error
+ * @param ReplError $error
  * @param ReplSession $session
  * @return string
  */
-function formatError($error, ReplSession $session): string
+function formatError(ReplError $error, ReplSession $session): string
 {
-    // Extract error type from class name (e.g., "EvaluationError" -> "Error")
-    $className = get_class($error);
-    $parts = explode('\\', $className);
-    $errorType = end($parts);
-
-    // Map error types to display format:
-    // - EvaluationError -> "Error"
-    // - ParseError -> "Parse error"
-    // - TypeError -> "TypeError"
-    if ($errorType === 'EvaluationError') {
-        $errorType = 'Error';
-    } elseif ($errorType === 'ParseError') {
-        $errorType = 'Parse error';
-    }
-    // Otherwise keep as-is (e.g., "TypeError")
+    $message = $error->message();
 
     if ($session->colorEnabled) {
-        // Red error type, normal color for the rest
-        return "\033[31m{$errorType}:\033[0m {$error->reason}";
+        // Red error prefix
+        return "\033[31mError:\033[0m {$message}";
     }
 
-    return "{$errorType}: {$error->reason}";
+    return "Error: {$message}";
 }
 
 /**
@@ -694,7 +682,7 @@ function evaluateAndDisplay(string $expression, ReplSession $session): IO
     return $evalResult->fold(
         // Failure case: error is passed to this function
         fn($error) => printLn(formatError($error, $session))
-            ->map(fn() => new ContinueRepl($session))
+            ->as(new ContinueRepl($session))
     )(
         // Success case: result is passed to this function
         fn($result) => displayResult($result, $session, $expression)

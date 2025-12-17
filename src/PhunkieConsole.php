@@ -36,7 +36,7 @@ class PhunkieConsole extends IOApp
 
     public function run(?array $args = []): IO
     {
-        return $this->parse($args)->flatMap(fn ($options) => $this->process($options));
+        return $this->parse($args)->flatMap(fn($options) => $this->process($options));
     }
 
     private function process(ParsedOptions $options): IO
@@ -70,9 +70,9 @@ class PhunkieConsole extends IOApp
             $declaredClasses = get_declared_classes();
             foreach ($declaredClasses as $class) {
                 $reflection = new ReflectionClass($class);
-                if ($reflection->isSubclassOf(IOApp::class) &&
-                    !$reflection->isAbstract() &&
-                    $reflection->getFileName() === $file) {
+                if ($reflection->isSubclassOf(IOApp::class)
+                    && !$reflection->isAbstract()
+                    && $reflection->getFileName() === $file) {
 
                     $app = new $class();
                     return $app->run($args)->unsafeRun();
@@ -96,7 +96,7 @@ class PhunkieConsole extends IOApp
         // Load command history from previous sessions
         // Print banner and start REPL loop
         return loadHistory()
-            ->flatMap(fn () => printBanner($colorEnabled))
-            ->flatMap(fn () => replLoop($session));
+            ->flatMap(fn() => printBanner($colorEnabled))
+            ->flatMap(fn() => replLoop($session));
     }
 }

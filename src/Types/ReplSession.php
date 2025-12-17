@@ -22,8 +22,18 @@ use Phunkie\Types\ImmMap;
  */
 final readonly class ReplSession
 {
+    /** @var ImmMap<string, string> */
     public ImmMap $useStatements;
 
+    /**
+     * @param ImmList<string> $history
+     * @param ImmMap<string, mixed> $variables
+     * @param bool $colorEnabled
+     * @param int $variableCounter
+     * @param string $incompleteInput
+     * @param string|null $currentNamespace
+     * @param ImmMap<string, string>|null $useStatements
+     */
     public function __construct(
         public ImmList $history,
         public ImmMap $variables,
@@ -48,5 +58,18 @@ final readonly class ReplSession
             null,
             ImmMap()
         );
+    }
+    /**
+     * Checks if a class, interface, or trait exists in the runtime environment.
+     * This encapsulates global state access, serving as a boundary for static analysis.
+     */
+    public function isEntityDefined(string $name, string $kind = 'class', int $attempt = 0): bool
+    {
+        return match ($kind) {
+            'class' => class_exists($name, false),
+            'interface' => interface_exists($name, false),
+            'trait' => trait_exists($name, false),
+            default => false
+        };
     }
 }

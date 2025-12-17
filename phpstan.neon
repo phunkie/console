@@ -1,0 +1,9 @@
+includes:
+    - vendor/phunkie/phpstan/extension.neon
+
+parameters:
+    level: 5
+    bootstrapFiles:
+        - scripts/phpstan-bootstrap.php
+    paths:
+        - src

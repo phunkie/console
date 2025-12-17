@@ -44,22 +44,99 @@ class ReplSteps implements Context
 
     private function startRepl(string $command = 'php bin/phunkie'): void
     {
-        if ($command !== 'php bin/phunkie' && $command !== 'php bin/phunkie -c') {
+        $isIOAppCommand = $command !== 'php bin/phunkie' && $command !== 'php bin/phunkie -c';
+
+        if ($isIOAppCommand) {
             // Non-standard command means we need to test the actual process
             $this->useProcessManager = true;
         }
 
         if ($this->useProcessManager) {
             $this->processManager->start($command);
-            $stdout = $this->processManager->getStdout();
-            if ($stdout !== null) {
-                $newOutput = ReplOutputReader::readOutput($stdout);
-                $this->output .= $newOutput;
+
+            if ($isIOAppCommand) {
+                // For IOApp commands, wait for the process to complete and capture all output
+                $this->waitForProcessAndCaptureOutput();
+            } else {
+                // For REPL mode, read available output
+                $stdout = $this->processManager->getStdout();
+                if ($stdout !== null) {
+                    $newOutput = ReplOutputReader::readOutput($stdout);
+                    $this->output .= $newOutput;
+                }
+                // Also capture stderr for debugging
+                $stderr = $this->processManager->getStderr();
+                if ($stderr !== null) {
+                    $errorOutput = ReplOutputReader::readOutput($stderr);
+                    if ($errorOutput !== '') {
+                        $this->output .= "\n[STDERR]: " . $errorOutput;
+                    }
+                }
             }
         } else {
             $colorEnabled = str_contains($command, '-c');
             $this->directManager->start($colorEnabled);
             $this->output = $this->directManager->getOutput();
+        }
+    }
+
+    private function waitForProcessAndCaptureOutput(): void
+    {
+        $stdout = $this->processManager->getStdout();
+        $stderr = $this->processManager->getStderr();
+
+        // Wait for the process to complete (up to 5 seconds)
+        $maxWait = 5.0;
+        $startTime = microtime(true);
+
+        while ((microtime(true) - $startTime) < $maxWait) {
+            // Read any available stdout
+            if ($stdout !== null) {
+                $read = [$stdout];
+                $write = null;
+                $except = null;
+                if (stream_select($read, $write, $except, 0, 100000) > 0) { // 100ms timeout
+                    $chunk = stream_get_contents($stdout);
+                    if ($chunk !== false && $chunk !== '') {
+                        $this->output .= $chunk;
+                    }
+                }
+            }
+
+            // Read any available stderr
+            if ($stderr !== null) {
+                $read = [$stderr];
+                $write = null;
+                $except = null;
+                if (stream_select($read, $write, $except, 0, 10000) > 0) { // 10ms timeout
+                    $chunk = stream_get_contents($stderr);
+                    if ($chunk !== false && $chunk !== '') {
+                        $this->output .= "\n[STDERR]: " . $chunk;
+                    }
+                }
+            }
+
+            // Check if process has exited
+            $status = $this->processManager->getStatus();
+            if ($status !== null && !$status['running']) {
+                // Process has exited, read any remaining output
+                usleep(50000); // 50ms grace period for buffered output
+                if ($stdout !== null) {
+                    $remaining = stream_get_contents($stdout);
+                    if ($remaining !== false && $remaining !== '') {
+                        $this->output .= $remaining;
+                    }
+                }
+                if ($stderr !== null) {
+                    $remaining = stream_get_contents($stderr);
+                    if ($remaining !== false && $remaining !== '') {
+                        $this->output .= "\n[STDERR]: " . $remaining;
+                    }
+                }
+                break;
+            }
+
+            usleep(10000); // 10ms sleep between checks
         }
     }
 
@@ -203,7 +280,19 @@ class ReplSteps implements Context
     #[Given('I run :command')]
     public function iRun(string $command): void
     {
-        $this->cleanup();
+        // Don't call cleanup() here as it deletes files created in Given steps
+        if ($this->useProcessManager) {
+            $this->processManager->terminate();
+        } else {
+            $this->directManager->reset();
+        }
+
+        $this->output = '';
+        $this->inputs = [];
+        $this->sentInputs = [];
+        $this->variableCount = 0;
+        $this->hasExited = false;
+
         $this->useProcessManager = true; // Always use process manager for "I run" scenarios
         $this->startRepl($command);
     }
@@ -233,8 +322,8 @@ class ReplSteps implements Context
 
         if (!str_contains($this->output, $expected)) {
             throw new \Exception(
-                "Expected output to contain '$expected'\n" .
-                "Actual output:\n" . $this->output
+                "Expected output to contain '$expected'\n"
+                . "Actual output:\n" . $this->output
             );
         }
     }
@@ -253,8 +342,8 @@ class ReplSteps implements Context
         // When -c flag is used, the prompt should have color codes
         if (!str_contains($this->output, "\033[")) {
             throw new \Exception(
-                "Expected output to contain ANSI color codes\n" .
-                "Actual output:\n" . $this->output
+                "Expected output to contain ANSI color codes\n"
+                . "Actual output:\n" . $this->output
             );
         }
     }
@@ -275,8 +364,8 @@ class ReplSteps implements Context
             $varName = '$var' . $i;
             if (!str_contains($this->output, $varName)) {
                 throw new \Exception(
-                    "Expected session to have variable $varName\n" .
-                    "Actual output:\n" . $this->output
+                    "Expected session to have variable $varName\n"
+                    . "Actual output:\n" . $this->output
                 );
             }
         }
@@ -348,8 +437,8 @@ class ReplSteps implements Context
         $pattern = preg_quote($variable, '/') . '.*' . preg_quote($expected, '/');
         if (!preg_match('/' . $pattern . '/s', $this->output)) {
             throw new \Exception(
-                "Expected output to contain '$expected' in variable '$variable'\n" .
-                "Actual output:\n" . $this->output
+                "Expected output to contain '$expected' in variable '$variable'\n"
+                . "Actual output:\n" . $this->output
             );
         }
     }
@@ -359,8 +448,8 @@ class ReplSteps implements Context
     {
         if (str_contains($this->output, $unexpected)) {
             throw new \Exception(
-                "Expected output NOT to contain '$unexpected'\n" .
-                "Actual output:\n" . $this->output
+                "Expected output NOT to contain '$unexpected'\n"
+                . "Actual output:\n" . $this->output
             );
         }
     }
@@ -371,15 +460,15 @@ class ReplSteps implements Context
     {
         if (!str_contains($this->output, 'Error') && !str_contains($this->output, 'error')) {
             throw new \Exception(
-                "Expected output to contain an error\n" .
-                "Actual output:\n" . $this->output
+                "Expected output to contain an error\n"
+                . "Actual output:\n" . $this->output
             );
         }
 
         if (!str_contains($this->output, $expected)) {
             throw new \Exception(
-                "Expected error to contain '$expected'\n" .
-                "Actual output:\n" . $this->output
+                "Expected error to contain '$expected'\n"
+                . "Actual output:\n" . $this->output
             );
         }
     }

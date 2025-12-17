@@ -73,7 +73,7 @@ Feature: Clone expressions
     And I press enter
     And I type "clone $num"
     And I press enter
-    Then I should see "Error: Cannot clone non-object (integer)"
+    Then I should see "Error: Evaluation error: Cannot clone non-object (integer)"
 
   Scenario: Error when trying to clone non-object (string)
     Given I am running the repl
@@ -81,7 +81,7 @@ Feature: Clone expressions
     And I press enter
     And I type "clone $str"
     And I press enter
-    Then I should see "Error: Cannot clone non-object (string)"
+    Then I should see "Error: Evaluation error: Cannot clone non-object (string)"
 
   Scenario: Error when trying to clone non-object (array)
     Given I am running the repl
@@ -89,7 +89,7 @@ Feature: Clone expressions
     And I press enter
     And I type "clone $arr"
     And I press enter
-    Then I should see "Error: Cannot clone non-object (array)"
+    Then I should see "Error: Evaluation error: Cannot clone non-object (array)"
 
   Scenario: Clone demonstrates shallow copy behavior
     Given I am running the repl

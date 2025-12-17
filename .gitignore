@@ -5,3 +5,4 @@ vendor/
 phpunit.xml
 .claude
 .specs
+.php-cs-fixer.cache
