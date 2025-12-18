@@ -1,3 +1,4 @@
+@php84
 Feature: Chaining Without Parentheses (PHP 8.4)
   As a PHP developer
   I want to chain method calls on new objects without extra parentheses

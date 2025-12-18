@@ -1,3 +1,4 @@
+@php84
 Feature: Asymmetric Visibility (PHP 8.4)
   As a PHP developer
   I want to use asymmetric visibility modifiers on properties

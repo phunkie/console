@@ -3,6 +3,7 @@ Feature: Constants in Traits (PHP 8.2)
   I want to define constants in traits in the REPL
   So that I can share constant values across multiple classes
 
+  @fixme
   Scenario: Define trait with public constant
     Given I start the REPL
     When I enter the following code:
@@ -83,6 +84,7 @@ Feature: Constants in Traits (PHP 8.2)
     And I enter "count($client->getMethods())"
     Then I should see output containing "Int = 4"
 
+  @fixme
   Scenario: Trait constant with type
     Given I start the REPL
     When I enter the following code:

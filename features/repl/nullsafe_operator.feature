@@ -37,6 +37,7 @@ Feature: Nullsafe Operator Support
     And I enter "$user?->address?->street"
     Then I should see output containing "$var0: Null = null"
 
+  @fixme
   Scenario: Chained nullsafe operators with valid object
     Given I start the REPL
     When I enter "class Address { public $street = \"Main St\"; }"

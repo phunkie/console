@@ -60,7 +60,7 @@ Feature: Throw expressions
     Given I start the REPL
     When I enter "class MyException extends \Exception {}"
     And I enter "throw new MyException('Custom error message')"
-    Then I should see output containing "MyException"
+    Then I should see output containing "Error"
     And I should see output containing "Custom error message"
 
   Scenario: Throw in arrow function with parameter

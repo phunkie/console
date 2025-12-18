@@ -1,3 +1,4 @@
+@php84
 Feature: Lazy Objects (PHP 8.4)
   As a PHP developer
   I want to create lazy objects using ReflectionClass

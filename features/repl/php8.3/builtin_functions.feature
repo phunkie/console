@@ -1,3 +1,4 @@
+@php83
 Feature: PHP 8.3 Built-in Functions
   As a PHP developer
   I want to use new PHP 8.3 built-in functions in the REPL

@@ -63,6 +63,7 @@ class ReplProcessManager
 
         fwrite($this->pipes[0], $input . "\n");
         fflush($this->pipes[0]);
+        usleep(100000); // Wait 100ms for REPL to process input
     }
 
     public function getStdout()

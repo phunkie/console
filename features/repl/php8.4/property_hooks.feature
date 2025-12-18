@@ -1,3 +1,4 @@
+@php84
 Feature: Property Hooks (PHP 8.4)
   As a PHP developer
   I want to use property hooks in the REPL

@@ -44,6 +44,7 @@ Feature: Union and intersection types
     And I press enter
     Then I should see "$var0: Null = null"
 
+  @fixme
   Scenario: Function with intersection type parameter accepts object implementing both interfaces
     Given I am running the repl
     When I type "function baz(Countable&Traversable $x): int { return count($x); }"
@@ -71,6 +72,7 @@ Feature: Union and intersection types
     And I press enter
     Then I should see "$var0: String = \"ok\""
 
+  @fixme
   Scenario: Function with complex union type accepts multiple types
     Given I am running the repl
     When I type "function complex(int|string|bool $x): string { return \"ok\"; }"

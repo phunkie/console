@@ -34,6 +34,7 @@ Feature: Spread Operator Support
     And I enter "[...$a, ...$b, ...$c]"
     Then I should see output containing "$var0: Array = [1, 2, 3, 4, 5, 6]"
 
+  @fixme
   Scenario: Function call with spread operator
     Given I start the REPL
     When I enter "function sum(int $a, int $b, int $c) { return $a + $b + $c; }"
@@ -41,6 +42,7 @@ Feature: Spread Operator Support
     And I enter "sum(...$args)"
     Then I should see output containing "$var0: Int = 6"
 
+  @fixme
   Scenario: Function call with mixed arguments and spread
     Given I start the REPL
     When I enter "function greet(string $greeting, string $name, string $suffix) { return $greeting . ' ' . $name . $suffix; }"

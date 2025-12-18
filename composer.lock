@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "814893e2273dffde2eee7ed79bd3b024",
+    "content-hash": "bd7be76dcf6f5d48de04b052498c6f8c",
     "packages": [
         {
             "name": "nikic/php-parser",
@@ -66,16 +66,16 @@
         },
         {
             "name": "phunkie/effect",
-            "version": "dev-developing-1.1.0",
+            "version": "1.1.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phunkie/effect.git",
-                "reference": "ed062f79724743e9591bef4f9f61a642e21463df"
+                "reference": "d7a5145a788a82311075ffe22bf8bf88bf9949e9"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phunkie/effect/zipball/ed062f79724743e9591bef4f9f61a642e21463df",
-                "reference": "ed062f79724743e9591bef4f9f61a642e21463df",
+                "url": "https://api.github.com/repos/phunkie/effect/zipball/d7a5145a788a82311075ffe22bf8bf88bf9949e9",
+                "reference": "d7a5145a788a82311075ffe22bf8bf88bf9949e9",
                 "shasum": ""
             },
             "require": {
@@ -141,10 +141,10 @@
             ],
             "description": "A functional effects library for PHP inspired by Scala's cats-effect",
             "support": {
-                "source": "https://github.com/phunkie/effect/tree/developing-1.1.0",
+                "source": "https://github.com/phunkie/effect/tree/1.1.0",
                 "issues": "https://github.com/phunkie/effect/issues"
             },
-            "time": "2025-12-17T23:47:53+00:00"
+            "time": "2025-12-18T00:02:39+00:00"
         },
         {
             "name": "phunkie/phunkie",
@@ -5309,9 +5309,7 @@
     ],
     "aliases": [],
     "minimum-stability": "dev",
-    "stability-flags": {
-        "phunkie/effect": 20
-    },
+    "stability-flags": {},
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {

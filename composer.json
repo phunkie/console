@@ -17,7 +17,7 @@
     "require": {
         "php": "^8.2 || ^8.3 || ^8.4",
         "phunkie/phunkie": "^1.0",
-        "phunkie/effect": "dev-developing-1.1.0",
+        "phunkie/effect": "^1.1",
         "nikic/php-parser": "^5.6"
     },
     "require-dev": {
@@ -50,7 +50,7 @@
         "bin/phunkie"
     ],
     "scripts": {
-        "test": "vendor/bin/phpunit",
+        "test": "bin/run-behat-tests.sh",
         "cs-fix": "vendor/bin/php-cs-fixer fix --allow-risky=yes",
         "cs-check": "vendor/bin/php-cs-fixer fix --dry-run --diff --allow-risky=yes",
         "phpstan": "phpstan analyse --memory-limit=512M",

@@ -1,3 +1,4 @@
+@php83
 Feature: Trait Constant Visibility (PHP 8.3)
   As a PHP developer
   I want to use visibility modifiers on trait constants

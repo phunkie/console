@@ -1,3 +1,4 @@
+@php83
 Feature: Readonly Amendments (PHP 8.3)
   As a PHP developer
   I want to use readonly property modifications during cloning
