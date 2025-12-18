@@ -13,10 +13,17 @@
 use Phunkie\Console\Types\ReplSession;
 use Phunkie\Effect\IO\IO;
 use Phunkie\Effect\IO\IOApp;
+use Phunkie\Validation\Validation;
+use Phunkie\Effect\IO\IOApp\ParsedOptions;
+
 use function Phunkie\Console\Repl\replLoop;
 use function Phunkie\Console\Functions\{setColors, printBanner, loadHistory, saveHistory};
+use function Phunkie\Effect\Functions\ioapp\arguments;
+use function Phunkie\Effect\Functions\ioapp\option;
 
-(function (){
+use const Phunkie\Effect\Functions\ioapp\NoInput;
+
+(function () {
     $autoloadPaths = [
         __DIR__ . '/../vendor/autoload.php', // Local development (console project)
         dirname(__DIR__, 3) . '/autoload.php', // Installed as dependency (vendor/phunkie/console/bin/phunkie -> vendor/autoload.php)
@@ -38,36 +45,14 @@ use function Phunkie\Console\Functions\{setColors, printBanner, loadHistory, sav
         exit(1);
     }
 
-    class PhunkieConsole extends IOApp {
-        public function run(?array $args = []): IO
-        {
-            // Parse command-line arguments
-            $colorEnabled = $this->hasColorFlag($args);
 
-            // Create initial session
-            $initialSession = ReplSession::empty();
-            $pair = setColors($colorEnabled)->run($initialSession);
-            $session = $pair->_1;
-
-            // Load command history from previous sessions
-            // Print banner and start REPL loop
-            return loadHistory()
-                ->flatMap(fn() => printBanner($colorEnabled))
-                ->flatMap(fn() => replLoop($session));
-        }
-
-        private function hasColorFlag(?array $args): bool
-        {
-            return $args !== null && in_array('-c', $args);
-        }
-    }
 
     // Setup signal handlers for graceful exit (Ctrl-C)
     if (function_exists('pcntl_signal')) {
         // Enable async signals so handlers are called automatically
         pcntl_async_signals(true);
 
-        pcntl_signal(SIGINT, function() {
+        pcntl_signal(SIGINT, function () {
             // Save history before exiting
             saveHistory()->unsafeRun();
             echo "\n\nbye \\o\n";
@@ -76,7 +61,7 @@ use function Phunkie\Console\Functions\{setColors, printBanner, loadHistory, sav
     }
 
     // Register shutdown function to save history on normal exit
-    register_shutdown_function(function() {
+    register_shutdown_function(function () {
         saveHistory()->unsafeRun();
     });
 
@@ -92,10 +77,8 @@ use function Phunkie\Console\Functions\{setColors, printBanner, loadHistory, sav
     }
 
     if ($app === null) {
-        $app = new PhunkieConsole();
+        $app = new \Phunkie\Console\PhunkieConsole("1.1.0");
     }
 
     $app->run($args)->unsafeRun();
 })();
-
-
