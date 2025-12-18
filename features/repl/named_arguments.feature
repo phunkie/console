@@ -51,7 +51,6 @@ Feature: Named arguments
     And I press enter
     Then I should see "$var0: String = \"Hey, Bob!\""
 
-  @fixme
   Scenario: User-defined function with named arguments and default parameters
     Given I am running the repl
     When I type "function greet($name, $greeting = 'Hello') { return $greeting . ', ' . $name; }"

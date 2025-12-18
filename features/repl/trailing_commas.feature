@@ -51,7 +51,6 @@ Feature: Trailing Comma Support
     When I enter "strlen('hello',)"
     Then I should see output containing "$var0: Int = 5"
 
-  @fixme
   Scenario: User-defined function call with trailing comma
     Given I start the REPL
     When I enter "function add($a, $b, $c) { return $a + $b + $c; }"
@@ -71,7 +70,6 @@ Feature: Trailing Comma Support
     And I enter "$calc->add(10, 20,)"
     Then I should see output containing "$var0: Int = 30"
 
-  @fixme
   Scenario: Static method call with trailing comma
     Given I start the REPL
     When I enter "class Math { public static function multiply($a, $b, $c) { return $a * $b * $c; } }"

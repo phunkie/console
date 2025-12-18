@@ -1,4 +1,3 @@
-@php83
 Feature: Typed Class Constants (PHP 8.3)
   As a PHP developer
   I want to use typed class constants in the REPL

@@ -1,4 +1,3 @@
-@php83
 Feature: Dynamic Class Constant Fetch (PHP 8.3)
   As a PHP developer
   I want to dynamically fetch class constants using variable syntax

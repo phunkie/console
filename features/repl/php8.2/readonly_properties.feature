@@ -3,7 +3,6 @@ Feature: Readonly Properties (PHP 8.1+)
   I want to use readonly properties in the REPL
   So that I can create immutable object properties
 
-  @fixme
   Scenario: Readonly property with constructor promotion
     Given I start the REPL
     When I enter the following code:

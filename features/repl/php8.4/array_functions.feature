@@ -1,4 +1,3 @@
-@php84
 Feature: New Array Functions (PHP 8.4)
   As a PHP developer
   I want to use new array functions in the REPL

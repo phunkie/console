@@ -1,4 +1,3 @@
-@php83
 Feature: #[Override] Attribute (PHP 8.3)
   As a PHP developer
   I want to use the #[Override] attribute in the REPL
