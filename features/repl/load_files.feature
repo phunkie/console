@@ -46,6 +46,21 @@ Feature: Loading .phunkie files
     When I enter "helper()"
     Then I should see output containing "helper result"
 
+  Scenario: Loading a file with variable definitions
+    Given I have a file "config.php" with content:
+      """
+      <?php
+      $appName = "Phunkie";
+      $answer = 42;
+      """
+    And I start the REPL
+    When I enter ":load config.php"
+    Then I should see output containing "// file config.php loaded"
+    When I enter "$appName"
+    Then I should see output containing "Phunkie"
+    When I enter "$answer"
+    Then I should see output containing "42"
+
   Scenario: Loading a non-existent file
     Given I start the REPL
     When I enter ":load nonexistent.phunkie"

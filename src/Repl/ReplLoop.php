@@ -21,7 +21,7 @@ use Phunkie\Effect\IO\IO;
 use Phunkie\Utils\Trampoline\Trampoline;
 
 use function Phunkie\Effect\Functions\console\printLn;
-use function Phunkie\Console\Functions\{evaluateExpression, addToHistory, setVariable, nextVariable, isColorEnabled, printHelp, printVariables, printHistory, printBanner, readLineFiltered, resetSession, setNamespace, addUseStatement};
+use function Phunkie\Console\Functions\{evaluateExpression, addToHistory, setVariable, nextVariable, isColorEnabled, printHelp, printVariables, printHistory, printBanner, readLineFiltered, resetSession, setNamespace, addUseStatement, cleanErrorMessage};
 use function Phunkie\Functions\trampoline\{More, Done};
 
 /**
@@ -36,7 +36,47 @@ use function Phunkie\Functions\trampoline\{More, Done};
 function replLoop(ReplSession $session): IO
 {
     // Run the trampolined loop
-    return new IO(fn() => replLoopTrampoline($session)->run());
+    return new IO(function () use ($session) {
+        installFatalErrorFormatter();
+
+        return replLoopTrampoline($session)->run();
+    });
+}
+
+/**
+ * Renders an uncatchable fatal as a clean phunkie error.
+ *
+ * The evaluation boundary already turns warnings, notices and every Throwable
+ * into a formatted error. A handful of failures — E_ERROR and the compile-time
+ * fatals such as "Cannot redeclare" — reach neither try/catch nor a custom error
+ * handler and terminate the process. PHP's own rendering of those is silenced
+ * and re-emitted here through a shutdown handler, so a fatal reads like any other
+ * REPL error rather than a raw stack trace pointing at the REPL's internals.
+ *
+ * This formats the fatal; it cannot resume the session. Surviving a fatal (so the
+ * REPL keeps its state and carries on) needs each evaluation to run in its own
+ * process — a separate, larger change.
+ */
+function installFatalErrorFormatter(): void
+{
+    ini_set('display_errors', '0');
+    ini_set('log_errors', '0');
+
+    register_shutdown_function(static function (): void {
+        $error = error_get_last();
+
+        if ($error === null) {
+            return;
+        }
+
+        $fatalSeverities = E_ERROR | E_PARSE | E_CORE_ERROR | E_COMPILE_ERROR | E_USER_ERROR;
+
+        if (($error['type'] & $fatalSeverities) === 0) {
+            return;
+        }
+
+        fwrite(STDOUT, "\nError: " . cleanErrorMessage($error['message']) . "\n");
+    });
 }
 
 /**
@@ -364,10 +404,22 @@ function loadFile(string $filepath, ReplSession $session): IO
         // Capture output to suppress it during load
         ob_start();
 
-        // Evaluate the file content as a single block
-        // This will execute the entire file and capture all definitions
+        // Evaluate the file content as a single block. Functions and classes it
+        // defines land in the global scope and persist. Its top-level variables,
+        // however, are locals of the eval, so they are captured here (via an
+        // isolated closure whose only other local is the source) and threaded
+        // back into the session below, so a loaded file's variables are usable
+        // in the REPL just like its functions and classes.
         try {
-            eval($contents);
+            $definedVariables = (static function (string $phunkieLoadSource): array {
+                eval($phunkieLoadSource);
+
+                /** @var array<string, mixed> $phunkieLoadVariables the variables eval defined, opaque to static analysis */
+                $phunkieLoadVariables = get_defined_vars();
+                unset($phunkieLoadVariables['phunkieLoadSource']);
+
+                return $phunkieLoadVariables;
+            })($contents);
         } catch (\Throwable $e) {
             ob_end_clean();
             printLn("Error loading file: " . $e->getMessage())->unsafeRun();
@@ -377,10 +429,27 @@ function loadFile(string $filepath, ReplSession $session): IO
         // Discard captured output
         ob_end_clean();
 
+        // Thread the file's variables into the session, keyed like every other
+        // REPL variable (with the leading `$`).
+        $variables = $session->variables;
+        foreach ($definedVariables as $name => $value) {
+            $variables = $variables->plus('$' . $name, $value);
+        }
+
+        $newSession = new ReplSession(
+            $session->history,
+            $variables,
+            $session->colorEnabled,
+            $session->variableCounter,
+            $session->incompleteInput,
+            $session->currentNamespace,
+            $session->useStatements
+        );
+
         // Get the basename for the message
         $filename = basename($filepath);
         printLn("// file $filename loaded")->unsafeRun();
-        return new ContinueRepl($session);
+        return new ContinueRepl($newSession);
     });
 }
 
