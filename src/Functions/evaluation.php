@@ -33,9 +33,71 @@ use function Failure;
  */
 function evaluateExpression(string $input, ReplSession $session): Validation
 {
-    /** @var Validation<ReplError, array> $parsed */
-    $parsed = \Phunkie\Console\Functions\parseInput($input);
-    return $parsed->flatMap(fn(array $ast) => evaluateAst($ast, $session));
+    return withEvaluationBoundary(trim($input), static function () use ($input, $session): Validation {
+        /** @var Validation<ReplError, array> $parsed */
+        $parsed = \Phunkie\Console\Functions\parseInput($input);
+
+        return $parsed->flatMap(fn(array $ast) => evaluateAst($ast, $session));
+    });
+}
+
+/**
+ * Runs an evaluation behind a single boundary that turns PHP's diagnostic
+ * spectrum into one cleanly formatted phunkie error.
+ *
+ * PHP reports problems in three incompatible ways, and every REPL evaluation
+ * path funnels through here so each is handled once, in one place:
+ *
+ *  - Warnings, notices and user errors are NOT throwables — a bare
+ *    `$obj->missing` emits an E_WARNING and returns null, so without this the
+ *    warning prints raw and the null is shown as the result. A temporary error
+ *    handler traps them and surfaces them as a Failure.
+ *  - Throwables (Error, TypeError, DivisionByZeroError, …) are caught.
+ *  - Deprecations are advisory, so they are swallowed without failing otherwise
+ *    valid code.
+ *
+ * Uncatchable fatals (E_ERROR / E_COMPILE_ERROR, e.g. "Cannot redeclare") cannot
+ * be caught in-process and are prevented earlier, before they reach eval().
+ *
+ * @param callable(): Validation<ReplError, mixed> $evaluate
+ * @return Validation<ReplError, mixed>
+ */
+function withEvaluationBoundary(string $expression, callable $evaluate): Validation
+{
+    $trappedMessage = null;
+
+    set_error_handler(static function (int $severity, string $message) use (&$trappedMessage): bool {
+        // Honour @-suppression and the configured error_reporting level.
+        if ((error_reporting() & $severity) === 0) {
+            return false;
+        }
+
+        // Deprecations are advisory: let the evaluation keep its result.
+        if (($severity & (E_DEPRECATED | E_USER_DEPRECATED)) !== 0) {
+            return true;
+        }
+
+        $trappedMessage ??= $message;
+
+        return true;
+    });
+
+    try {
+        /** @var Validation<ReplError, mixed> $result */
+        $result = $evaluate();
+    } catch (\Throwable $e) {
+        return Failure(new EvaluationError($expression, cleanErrorMessage($e->getMessage())));
+    } finally {
+        restore_error_handler();
+    }
+
+    // A trapped warning on an otherwise-successful evaluation becomes the result,
+    // so the user sees a clean error rather than a leaked warning plus a stray null.
+    if ($trappedMessage !== null && !$result->isLeft()) {
+        return Failure(new EvaluationError($expression, cleanErrorMessage($trappedMessage)));
+    }
+
+    return $result;
 }
 
 /**
@@ -4299,8 +4361,19 @@ function cleanErrorMessage(string $message): string
     // Remove "and exactly N expected" part to shorten the message
     $message = preg_replace('/\s+and exactly \d+ expected$/', '', $message);
 
-    // Remove any remaining eval()'d code references
-    $message = preg_replace('/\s+in\s+[^\s]+:\s*eval\(\)\'d code[^\s]*/', '', $message);
+    // Remove any remaining eval()'d code references, including the parenthetical
+    // "(previously declared in /path : eval()'d code:1)" that a redeclare fatal
+    // carries, whichever way the location is spelled.
+    $message = preg_replace('/\s*\([^)]*eval\(\)\'d code[^)]*\)/', '', $message);
+    $message = preg_replace('/\s+in\s+\S+\s*:\s*eval\(\)\'d code(?::\d+| on line \d+)?/', '', $message);
+
+    // A redeclare fatal's location lived inside "(previously declared …)"; once
+    // the location is gone the empty parenthetical is just noise.
+    $message = preg_replace('/\s*\(previously declared\s*\)/', '', $message);
+
+    // Remove a trailing internal location, e.g. "in /path/evaluation.php on line 781",
+    // which leaks the REPL's own source into a message meant for the user.
+    $message = preg_replace('/\s+in\s+\S+\.php\s+on line \d+/', '', $message);
 
     // Clean up any double spaces that might result
     $message = preg_replace('/\s+/', ' ', $message);
