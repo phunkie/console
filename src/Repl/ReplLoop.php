@@ -37,30 +37,52 @@ function replLoop(ReplSession $session): IO
 {
     // Run the trampolined loop
     return new IO(function () use ($session) {
-        installFatalErrorFormatter();
+        installDiagnosticsRendering();
 
         return replLoopTrampoline($session)->run();
     });
 }
 
 /**
- * Renders an uncatchable fatal as a clean phunkie error.
+ * Configures how PHP reports problems, so the REPL alone decides what is shown.
  *
- * The evaluation boundary already turns warnings, notices and every Throwable
- * into a formatted error. A handful of failures — E_ERROR and the compile-time
- * fatals such as "Cannot redeclare" — reach neither try/catch nor a custom error
- * handler and terminate the process. PHP's own rendering of those is silenced
- * and re-emitted here through a shutdown handler, so a fatal reads like any other
- * REPL error rather than a raw stack trace pointing at the REPL's internals.
- *
- * This formats the fatal; it cannot resume the session. Surviving a fatal (so the
- * REPL keeps its state and carries on) needs each evaluation to run in its own
- * process — a separate, larger change.
+ * Split out from installDiagnosticsRendering() because it is idempotent and the
+ * in-process test harness needs it too: without it, tests would run against a
+ * different diagnostic configuration than the REPL they are meant to exercise.
  */
-function installFatalErrorFormatter(): void
+function configureDiagnostics(): void
 {
     ini_set('display_errors', '0');
     ini_set('log_errors', '0');
+    error_reporting(E_ALL);
+}
+
+/**
+ * Takes over how diagnostics reach the user.
+ *
+ * PHP's own rendering is silenced, because everything the user should see is
+ * formatted by the REPL: the evaluation boundary turns warnings, notices and
+ * every Throwable into a phunkie error, and reports deprecations as advisories.
+ *
+ * error_reporting is widened to E_ALL so that what the REPL reports does not
+ * depend on the host's php.ini. A production ini that masks E_DEPRECATED would
+ * otherwise silently hide exactly the notices an interactive session most wants
+ * to show. The @ operator is unaffected: it zeroes error_reporting for the
+ * duration of its own expression, which the handlers still honour.
+ *
+ * A handful of failures — E_ERROR and the compile-time fatals such as "Cannot
+ * redeclare" — reach neither try/catch nor a custom error handler and terminate
+ * the process. Those are re-emitted through a shutdown handler so a fatal reads
+ * like any other REPL error rather than a raw stack trace pointing at the REPL's
+ * internals.
+ *
+ * That formats the fatal; it cannot resume the session. Surviving a fatal (so the
+ * REPL keeps its state and carries on) needs each evaluation to run in its own
+ * process — a separate, larger change.
+ */
+function installDiagnosticsRendering(): void
+{
+    configureDiagnostics();
 
     register_shutdown_function(static function (): void {
         $error = error_get_last();

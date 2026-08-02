@@ -68,6 +68,11 @@ function withEvaluationBoundary(string $expression, callable $evaluate): Validat
     $trappedMessage = null;
     $deprecations = [];
 
+    // Own the reporting level for the evaluation, so what the REPL reports does
+    // not depend on ambient php.ini or on a test runner that resets it per step.
+    // The @ operator still masks this from inside the expression being evaluated.
+    $previousReporting = error_reporting(E_ALL);
+
     set_error_handler(static function (int $severity, string $message) use (&$trappedMessage, &$deprecations): bool {
         // Honour @-suppression and the configured error_reporting level.
         if ((error_reporting() & $severity) === 0) {
@@ -96,6 +101,7 @@ function withEvaluationBoundary(string $expression, callable $evaluate): Validat
         return Failure(new EvaluationError($expression, cleanErrorMessage($e->getMessage())));
     } finally {
         restore_error_handler();
+        error_reporting($previousReporting);
     }
 
     // A trapped warning on an otherwise-successful evaluation becomes the result,
