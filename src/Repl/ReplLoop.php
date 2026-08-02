@@ -737,6 +737,25 @@ function formatError(ReplError $error, ReplSession $session): string
 }
 
 /**
+ * Formats a deprecation notice raised while evaluating.
+ *
+ * Deprecations are advisory rather than failures, so they are rendered in yellow
+ * and the result is still shown underneath.
+ *
+ * @param string $message
+ * @param ReplSession $session
+ * @return string
+ */
+function formatDeprecation(string $message, ReplSession $session): string
+{
+    if ($session->colorEnabled) {
+        return "\033[33mDeprecated:\033[0m {$message}";
+    }
+
+    return "Deprecated: {$message}";
+}
+
+/**
  * Evaluates an expression and displays the result.
  *
  * @param string $expression
@@ -754,7 +773,12 @@ function evaluateAndDisplay(string $expression, ReplSession $session): IO
             ->as(new ContinueRepl($session))
     )(
         // Success case: result is passed to this function
-        fn($result) => displayResult($result, $session, $expression)
+        fn($result) => [] === $result->deprecations
+            ? displayResult($result, $session, $expression)
+            : printLn(implode("\n", array_map(
+                fn(string $message) => formatDeprecation($message, $session),
+                $result->deprecations
+            )))->flatMap(fn() => displayResult($result, $session, $expression))
     );
 }
 

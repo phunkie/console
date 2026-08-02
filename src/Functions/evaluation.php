@@ -53,8 +53,9 @@ function evaluateExpression(string $input, ReplSession $session): Validation
  *    warning prints raw and the null is shown as the result. A temporary error
  *    handler traps them and surfaces them as a Failure.
  *  - Throwables (Error, TypeError, DivisionByZeroError, …) are caught.
- *  - Deprecations are advisory, so they are swallowed without failing otherwise
- *    valid code.
+ *  - Deprecations are advisory: they are collected and reported alongside the
+ *    result rather than failing otherwise valid code. PHP 8.5 deprecates a great
+ *    deal, so a REPL that hides them teaches the wrong thing.
  *
  * Uncatchable fatals (E_ERROR / E_COMPILE_ERROR, e.g. "Cannot redeclare") cannot
  * be caught in-process and are prevented earlier, before they reach eval().
@@ -65,15 +66,21 @@ function evaluateExpression(string $input, ReplSession $session): Validation
 function withEvaluationBoundary(string $expression, callable $evaluate): Validation
 {
     $trappedMessage = null;
+    $deprecations = [];
 
-    set_error_handler(static function (int $severity, string $message) use (&$trappedMessage): bool {
+    set_error_handler(static function (int $severity, string $message) use (&$trappedMessage, &$deprecations): bool {
         // Honour @-suppression and the configured error_reporting level.
         if ((error_reporting() & $severity) === 0) {
             return false;
         }
 
-        // Deprecations are advisory: let the evaluation keep its result.
+        // Deprecations are advisory: report them, but let the evaluation keep its result.
         if (($severity & (E_DEPRECATED | E_USER_DEPRECATED)) !== 0) {
+            $cleaned = cleanErrorMessage($message);
+            if (!in_array($cleaned, $deprecations, true)) {
+                $deprecations[] = $cleaned;
+            }
+
             return true;
         }
 
@@ -97,7 +104,48 @@ function withEvaluationBoundary(string $expression, callable $evaluate): Validat
         return Failure(new EvaluationError($expression, cleanErrorMessage($trappedMessage)));
     }
 
-    return $result;
+    if ([] === $deprecations) {
+        return $result;
+    }
+
+    return $result->map(
+        /** @param EvaluationResult $evaluated */
+        fn($evaluated) => $evaluated instanceof EvaluationResult
+            ? $evaluated->withDeprecations($deprecations)
+            : $evaluated
+    );
+}
+
+/**
+ * Installs an error handler for a single eval'd definition.
+ *
+ * Definition sites need to know whether their own eval() failed, but they must
+ * not decide what a deprecation means: that policy belongs to
+ * withEvaluationBoundary(). Deprecations are therefore passed out to the handler
+ * this one replaces, so they reach the boundary and are reported as advisories
+ * instead of being mistaken for failures.
+ *
+ * Pair every call with restore_error_handler().
+ *
+ * @param string|null $errorMessage Receives the first genuine error, by reference
+ */
+function trapDefinitionErrors(?string &$errorMessage): void
+{
+    $previous = set_error_handler(
+        static function (int $severity, string $message, string $file = '', int $line = 0) use (&$errorMessage, &$previous) {
+            if ((error_reporting() & $severity) === 0) {
+                return false;
+            }
+
+            if (($severity & (E_DEPRECATED | E_USER_DEPRECATED)) !== 0) {
+                return $previous === null ? false : $previous($severity, $message, $file, $line);
+            }
+
+            $errorMessage ??= $message;
+
+            return true;
+        }
+    );
 }
 
 /**
@@ -2006,10 +2054,7 @@ function evaluateEnumDefinition(Node\Stmt\Enum_ $stmt, ReplSession $session): Va
 
         // Set up error handler to catch fatal errors from eval()
         $errorMessage = null;
-        set_error_handler(function ($severity, $message, $file, $line) use (&$errorMessage) {
-            $errorMessage = $message;
-            return true; // Don't execute PHP's internal error handler
-        });
+        trapDefinitionErrors($errorMessage);
 
         try {
             // Use eval() to define the enum in the current scope
@@ -4103,14 +4148,11 @@ function evaluateAnonymousClass(Expr\New_ $node, ReplSession $session): Validati
 
         // Set up error handler
         $errorMessage = null;
-        set_error_handler(function ($severity, $message, $file, $line) use (&$errorMessage) {
-            $errorMessage = $message;
-            return true;
-        });
+        trapDefinitionErrors($errorMessage);
 
         try {
             // Eval the expression to create the anonymous class instance
-            $instance = @eval("return $code;");
+            $instance = eval("return $code;");
         } finally {
             restore_error_handler();
         }
@@ -4196,13 +4238,10 @@ function evaluateInterfaceDefinition(Node\Stmt\Interface_ $interfaceNode, ReplSe
 
         // Set up error handler
         $errorMessage = null;
-        set_error_handler(function ($severity, $message, $file, $line) use (&$errorMessage) {
-            $errorMessage = $message;
-            return true;
-        });
+        trapDefinitionErrors($errorMessage);
 
         try {
-            @eval($code);
+            eval($code);
         } finally {
             restore_error_handler();
         }
@@ -4277,13 +4316,10 @@ function evaluateTraitDefinition(Node\Stmt\Trait_ $traitNode, ReplSession $sessi
 
         // Set up error handler
         $errorMessage = null;
-        set_error_handler(function ($severity, $message, $file, $line) use (&$errorMessage) {
-            $errorMessage = $message;
-            return true;
-        });
+        trapDefinitionErrors($errorMessage);
 
         try {
-            @eval($code);
+            eval($code);
         } finally {
             restore_error_handler();
         }
@@ -4384,14 +4420,11 @@ function evaluateClassDefinition(Node\Stmt\Class_ $classNode, ReplSession $sessi
 
         // Set up error handler to catch warnings and notices from eval()
         $errorMessage = null;
-        set_error_handler(function ($severity, $message, $file, $line) use (&$errorMessage) {
-            $errorMessage = $message;
-            return true; // Don't execute PHP's internal error handler
-        });
+        trapDefinitionErrors($errorMessage);
 
         try {
             // Evaluate the class definition to define it in the runtime
-            @eval($classCode); // @ suppresses fatal error output
+            eval($classCode);
         } finally {
             restore_error_handler();
         }
