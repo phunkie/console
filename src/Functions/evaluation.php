@@ -338,6 +338,9 @@ function evaluateNode(Node $node, ReplSession $session): Validation
         $node instanceof Expr\Instanceof_
             => evaluateInstanceof($node, $session),
 
+        $node instanceof Expr\Cast
+            => evaluateCast($node, $session),
+
         $node instanceof Expr\Clone_
             => evaluateClone($node, $session),
 
@@ -2198,6 +2201,47 @@ function evaluateInstanceof(Expr\Instanceof_ $node, ReplSession $session): Valid
 }
 
 /**
+ * Evaluates a type cast (e.g., (int) $x).
+ *
+ * @param Expr\Cast $node
+ * @param ReplSession $session
+ * @return Validation<EvaluationError, EvaluationResult>
+ */
+function evaluateCast(Expr\Cast $node, ReplSession $session): Validation
+{
+    return evaluateNode($node->expr, $session)->flatMap(
+        /** @param EvaluationResult $result */
+        function ($result) use ($node) {
+            $value = $result->value;
+
+            // (void) discards the value: evaluate the operand, then produce nothing.
+            if ($node instanceof Expr\Cast\Void_) {
+                return Success(EvaluationResult::of(null, 'Null', '__no_output__'));
+            }
+
+            try {
+                $cast = match (true) {
+                    $node instanceof Expr\Cast\Int_ => (int) $value,
+                    $node instanceof Expr\Cast\Double => (float) $value,
+                    $node instanceof Expr\Cast\String_ => (string) $value,
+                    $node instanceof Expr\Cast\Bool_ => (bool) $value,
+                    $node instanceof Expr\Cast\Array_ => (array) $value,
+                    $node instanceof Expr\Cast\Object_ => (object) $value,
+                    default => throw new \InvalidArgumentException(sprintf(
+                        'Unsupported cast "%s".',
+                        get_debug_type($node)
+                    )),
+                };
+            } catch (\Throwable $e) {
+                return Failure(new EvaluationError('Cast', $e->getMessage()));
+            }
+
+            return Success(EvaluationResult::of($cast, getType($cast)));
+        }
+    );
+}
+
+/**
  * Evaluates a clone expression (e.g., clone $obj).
  *
  * @param Expr\Clone_ $node
@@ -2392,14 +2436,18 @@ function evaluateFirstClassCallable($node, ReplSession $session): Validation
                 $sessionFuncName = '$' . $funcName;
                 $funcOption = $session->variables->get($sessionFuncName);
 
+                // Functions defined in the session are already stored as closures
                 if (!$funcOption->isEmpty()) {
                     $func = $funcOption->get();
-                    // For user-defined functions stored as AST, we can't easily create a Closure
-                    // We would need to eval the function definition again or store it differently
-                    return Failure(new EvaluationError(
-                        $funcName,
-                        'First-class callable syntax not supported for user-defined functions yet'
-                    ));
+                    if (!is_callable($func)) {
+                        return Failure(new EvaluationError($funcName, sprintf(
+                            'Cannot create a callable from "%s", %s given.',
+                            $funcName,
+                            get_debug_type($func)
+                        )));
+                    }
+
+                    return Success(EvaluationResult::of($func, getType($func)));
                 }
 
                 // Built-in function
@@ -2712,6 +2760,42 @@ function evaluateStmtBlock(array $stmts, ReplSession $session): Validation
 }
 
 /**
+ * Evaluates a pipe expression (e.g., $x |> strtoupper(...)).
+ *
+ * The right operand is a callable taking one argument, and the result is that
+ * callable applied to the left operand.
+ *
+ * @param Expr\BinaryOp\Pipe $node
+ * @param ReplSession $session
+ * @return Validation<EvaluationError, EvaluationResult>
+ */
+function evaluatePipe(Expr\BinaryOp\Pipe $node, ReplSession $session): Validation
+{
+    return evaluateNode($node->left, $session)->flatMap(
+        /** @param EvaluationResult $input */
+        fn($input) => evaluateNode($node->right, $session)->flatMap(
+            /** @param EvaluationResult $callable */
+            function ($callable) use ($input) {
+                if (!is_callable($callable->value)) {
+                    return Failure(new EvaluationError('Pipe', sprintf(
+                        'Right-hand side of "|>" is not callable, %s given.',
+                        get_debug_type($callable->value)
+                    )));
+                }
+
+                try {
+                    $piped = ($callable->value)($input->value);
+                } catch (\Throwable $e) {
+                    return Failure(new EvaluationError('Pipe', $e->getMessage()));
+                }
+
+                return Success(EvaluationResult::of($piped, getType($piped)));
+            }
+        )
+    );
+}
+
+/**
  * Evaluates a binary operation (e.g., +, -, *, /, ., etc.).
  *
  * @param Expr\BinaryOp $node
@@ -2740,6 +2824,12 @@ function evaluateBinaryOp(Expr\BinaryOp $node, ReplSession $session): Validation
         $right = $rightResult->getOrElse(null)->value;
 
         return Success(EvaluationResult::of($right, getType($right)));
+    }
+
+    // The pipe operator applies its right operand to its left, rather than
+    // combining two values the way every other binary operator does.
+    if ($node instanceof Expr\BinaryOp\Pipe) {
+        return evaluatePipe($node, $session);
     }
 
     // Evaluate left and right operands for all other operations

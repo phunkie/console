@@ -20,7 +20,7 @@ A powerful, interactive REPL (Read-Eval-Print Loop) console for [Phunkie](https:
 
 ## Requirements
 
-- PHP 8.2, 8.3, or 8.4
+- PHP 8.2, 8.3, 8.4, or 8.5
 - Composer
 
 ## Installation
@@ -169,7 +169,7 @@ Run version-specific tests:
 The project maintains comprehensive test coverage:
 - **Unit Tests**: Testing individual components with PHPUnit
 - **Acceptance Tests**: End-to-end REPL functionality with Behat
-- **Cross-version Testing**: Automated testing across PHP 8.2, 8.3, and 8.4
+- **Cross-version Testing**: Automated testing across PHP 8.2, 8.3, 8.4, and 8.5
 
 ### Code Quality
 

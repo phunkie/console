@@ -45,7 +45,7 @@ composer global require phunkie/console
 
 ### System Requirements
 
-- PHP 8.2, 8.3, or 8.4
+- PHP 8.2, 8.3, 8.4, or 8.5
 - Composer
 - readline extension (usually included with PHP)
 
