@@ -9,11 +9,7 @@ Feature: First-Class Callable Syntax
     And I enter "$f('hello')"
     Then I should see output containing "Int = 5"
 
-  # Note: First-class callable syntax for user-defined functions is not yet supported
-  # User-defined functions are stored as AST nodes, not as callable PHP functions
-  # Supporting this would require eval'ing the function definition to create a real PHP function
-
-  Scenario: First-class callable from user-defined function - known limitation
+  Scenario: First-class callable from user-defined function
     Given I start the REPL
     When I enter the following code:
       """
@@ -22,7 +18,19 @@ Feature: First-Class Callable Syntax
       }
       """
     And I enter "$addFunc = add(...)"
-    Then I should see output containing "Error"
+    And I enter "$addFunc(2, 3)"
+    Then I should see output containing "Int = 5"
+
+  Scenario: First-class callable from user-defined function passed to array_map
+    Given I start the REPL
+    When I enter the following code:
+      """
+      function double($n) {
+          return $n * 2;
+      }
+      """
+    And I enter "array_map(double(...), [1, 2, 3])"
+    Then I should see output containing "Array = [2, 4, 6]"
 
   Scenario: First-class callable from static method
     Given I start the REPL

@@ -18,17 +18,38 @@ namespace Phunkie\Console\Types;
  */
 final readonly class EvaluationResult
 {
+    /**
+     * @param list<string> $deprecations Advisory notices raised while evaluating
+     */
     public function __construct(
         public mixed $value,
         public string $type,
         public ?string $assignedVariable = null,
         public array $additionalAssignments = [],
-        public bool $isOutputStatement = false
+        public bool $isOutputStatement = false,
+        public array $deprecations = []
     ) {}
 
     public static function of(mixed $value, string $type, ?string $assignedVariable = null, array $additionalAssignments = [], bool $isOutputStatement = false): EvaluationResult
     {
         return new EvaluationResult($value, $type, $assignedVariable, $additionalAssignments, $isOutputStatement);
+    }
+
+    /**
+     * Returns a copy carrying the deprecation notices raised while evaluating.
+     *
+     * @param list<string> $deprecations
+     */
+    public function withDeprecations(array $deprecations): self
+    {
+        return new self(
+            $this->value,
+            $this->type,
+            $this->assignedVariable,
+            $this->additionalAssignments,
+            $this->isOutputStatement,
+            $deprecations
+        );
     }
 
     /**

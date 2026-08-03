@@ -8,7 +8,7 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 
-PHP_VERSIONS=("8.2" "8.3" "8.4")
+PHP_VERSIONS=("8.2" "8.3" "8.4" "8.5")
 
 echo "=========================================="
 echo "Running lint + tests on PHP versions: ${PHP_VERSIONS[*]}"
