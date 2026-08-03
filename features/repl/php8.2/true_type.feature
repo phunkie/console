@@ -22,7 +22,7 @@ Feature: True Type (PHP 8.2)
       }
       """
     And I enter "alwaysTrue()"
-    Then I should see output containing "Bool = true"
+    Then I should see output containing "Boolean = true"
 
   # Note: Literal true/false/null types in parameters have a known limitation in REPL
   # due to how arguments are evaluated before function calls.
@@ -41,13 +41,13 @@ Feature: True Type (PHP 8.2)
       """
     And I enter "$validator = new Validator()"
     And I enter "$validator->validate()"
-    Then I should see output containing "Bool = true"
+    Then I should see output containing "Boolean = true"
 
   Scenario: Arrow function with true return type
     Given I start the REPL
     When I enter "$success = fn(): true => true"
     And I enter "$success()"
-    Then I should see output containing "Bool = true"
+    Then I should see output containing "Boolean = true"
 
   Scenario: True type in union with other types
     Given I start the REPL
@@ -58,4 +58,4 @@ Feature: True Type (PHP 8.2)
       }
       """
     And I enter "checkStatus()"
-    Then I should see output containing "Bool = true"
+    Then I should see output containing "Boolean = true"

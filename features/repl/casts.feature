@@ -26,12 +26,12 @@ Feature: Type casts
   Scenario: Casting zero to bool
     Given I start the REPL
     When I enter "(bool) 0"
-    Then I should see output containing "Bool = false"
+    Then I should see output containing "Boolean = false"
 
   Scenario: Casting a non-empty string to bool
     Given I start the REPL
     When I enter "(bool) \"phunkie\""
-    Then I should see output containing "Bool = true"
+    Then I should see output containing "Boolean = true"
 
   Scenario: Casting a scalar to array
     Given I start the REPL

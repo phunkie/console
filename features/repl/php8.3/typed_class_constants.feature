@@ -100,7 +100,7 @@ Feature: Typed Class Constants (PHP 8.3)
     When I enter "Database::PORT"
     Then I should see output containing "Int = 3306"
     When I enter "Database::SSL"
-    Then I should see output containing "Bool = true"
+    Then I should see output containing "Boolean = true"
 
   Scenario: Private typed constant
     Given I start the REPL

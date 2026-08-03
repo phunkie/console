@@ -69,14 +69,14 @@ Feature: Import Command
     When I enter ":import option/isDefined"
     Then I should see output containing "imported function \Phunkie\Functions\option\isDefined()"
     When I enter "isDefined(Some(42))"
-    Then I should see output containing "Bool = true"
+    Then I should see output containing "Boolean = true"
 
   Scenario: Import from option module - isNone
     Given I start the REPL
     When I enter ":import option/isNone"
     Then I should see output containing "imported function \Phunkie\Functions\option\isNone()"
     When I enter "isNone(None())"
-    Then I should see output containing "Bool = true"
+    Then I should see output containing "Boolean = true"
 
   Scenario: Error when importing non-existent module
     Given I start the REPL

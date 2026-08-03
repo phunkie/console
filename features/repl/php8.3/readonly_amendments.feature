@@ -107,7 +107,7 @@ Feature: Readonly Amendments (PHP 8.3)
     When I enter "$c2->timeout"
     Then I should see output containing "Int = 60"
     When I enter "$c2->debug"
-    Then I should see output containing "Bool = false"
+    Then I should see output containing "Boolean = false"
 
   Scenario: Clone with conditional readonly modification
     Given I start the REPL

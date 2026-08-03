@@ -22,7 +22,7 @@ Feature: False Type (PHP 8.2)
       }
       """
     And I enter "alwaysFalse()"
-    Then I should see output containing "Bool = false"
+    Then I should see output containing "Boolean = false"
 
   # Note: Literal true/false/null types in parameters have a known limitation in REPL
   # due to how arguments are evaluated before function calls.
@@ -41,13 +41,13 @@ Feature: False Type (PHP 8.2)
       """
     And I enter "$checker = new Checker()"
     And I enter "$checker->check()"
-    Then I should see output containing "Bool = false"
+    Then I should see output containing "Boolean = false"
 
   Scenario: Arrow function with false return type
     Given I start the REPL
     When I enter "$failure = fn(): false => false"
     And I enter "$failure()"
-    Then I should see output containing "Bool = false"
+    Then I should see output containing "Boolean = false"
 
   Scenario: False type in union with other types
     Given I start the REPL
@@ -58,4 +58,4 @@ Feature: False Type (PHP 8.2)
       }
       """
     And I enter "tryOperation()"
-    Then I should see output containing "Bool = false"
+    Then I should see output containing "Boolean = false"

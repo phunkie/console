@@ -12,7 +12,7 @@ Feature: Error Suppression Operator (@)
   Scenario: Suppress warning from file operation
     Given I start the REPL
     When I enter "@file_get_contents('/nonexistent/file.txt')"
-    Then I should see output containing "Bool = false"
+    Then I should see output containing "Boolean = false"
 
   Scenario: Error suppression in variable assignment
     Given I start the REPL

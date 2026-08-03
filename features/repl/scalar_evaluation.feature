@@ -16,9 +16,9 @@ Feature: Evaluating Scalar Values
   Scenario: Evaluating booleans
     Given I start the REPL
     When I enter "true"
-    Then I should see output containing "$var0: Bool = true"
+    Then I should see output containing "$var0: Boolean = true"
     When I enter "false"
-    Then I should see output containing "$var1: Bool = false"
+    Then I should see output containing "$var1: Boolean = false"
 
   Scenario: Evaluating null
     Given I start the REPL

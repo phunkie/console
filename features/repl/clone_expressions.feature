@@ -22,7 +22,7 @@ Feature: Clone expressions
     Then I should see "$var0: Int = 42"
     When I type "$original === $copy"
     And I press enter
-    Then I should see "$var1: Bool = false"
+    Then I should see "$var1: Boolean = false"
 
   Scenario: Clone with __clone magic method
     Given I am running the repl

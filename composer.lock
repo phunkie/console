@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "0a5eec3b6893b5edf3ed95c5a1abd02e",
+    "content-hash": "75caf47d62bbeccb5eca18b2757ab361",
     "packages": [
         {
             "name": "nikic/php-parser",
@@ -148,16 +148,16 @@
         },
         {
             "name": "phunkie/phunkie",
-            "version": "1.3.0",
+            "version": "1.4.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/phunkie/phunkie.git",
-                "reference": "43a800e55e8c91a0f104cdff261039453db605f3"
+                "reference": "9b7795477c794e6c23fabcab4a1dcf0dae6ccac2"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/phunkie/phunkie/zipball/43a800e55e8c91a0f104cdff261039453db605f3",
-                "reference": "43a800e55e8c91a0f104cdff261039453db605f3",
+                "url": "https://api.github.com/repos/phunkie/phunkie/zipball/9b7795477c794e6c23fabcab4a1dcf0dae6ccac2",
+                "reference": "9b7795477c794e6c23fabcab4a1dcf0dae6ccac2",
                 "shasum": ""
             },
             "require": {
@@ -195,9 +195,9 @@
             "description": "Functional structures library for PHP",
             "support": {
                 "issues": "https://github.com/phunkie/phunkie/issues",
-                "source": "https://github.com/phunkie/phunkie/tree/1.3.0"
+                "source": "https://github.com/phunkie/phunkie/tree/1.4.0"
             },
-            "time": "2026-08-02T15:07:02+00:00"
+            "time": "2026-08-03T15:42:52+00:00"
         }
     ],
     "packages-dev": [

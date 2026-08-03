@@ -43,7 +43,7 @@ Feature: Pipe Operator (PHP 8.5)
   Scenario: Pipe binds tighter than comparison
     Given I start the REPL
     When I enter "\"beep\" |> strlen(...) == 4"
-    Then I should see output containing "Bool = true"
+    Then I should see output containing "Boolean = true"
 
   Scenario: Piping into a value that is not callable
     Given I start the REPL

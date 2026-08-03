@@ -99,7 +99,7 @@ Feature: Lazy Objects (PHP 8.4)
       });
       """
     And I enter "(new ReflectionClass($lazy))->isUninitializedLazyObject($lazy)"
-    Then I should see output containing "Bool = true"
+    Then I should see output containing "Boolean = true"
 
   Scenario: Lazy object becomes initialized after access
     Given I start the REPL
@@ -120,7 +120,7 @@ Feature: Lazy Objects (PHP 8.4)
     And I enter "$lazy->name"
     And I enter "$after = (new ReflectionClass($lazy))->isUninitializedLazyObject($lazy)"
     And I enter "$before && !$after"
-    Then I should see output containing "Bool = true"
+    Then I should see output containing "Boolean = true"
 
   Scenario: Initialize lazy object explicitly
     Given I start the REPL
@@ -171,7 +171,7 @@ Feature: Lazy Objects (PHP 8.4)
     And I enter "$lazy->increment()"
     And I enter "(new ReflectionClass($lazy))->resetAsLazyGhost($lazy, function ($object) { $object->__construct(); })"
     And I enter "(new ReflectionClass($lazy))->isUninitializedLazyObject($lazy)"
-    Then I should see output containing "Bool = true"
+    Then I should see output containing "Boolean = true"
 
   Scenario: Lazy object with dependencies
     Given I start the REPL

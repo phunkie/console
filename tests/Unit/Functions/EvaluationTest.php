@@ -11,10 +11,12 @@
 
 namespace Tests\Phunkie\Console\Functions;
 
+use PHPUnit\Framework\Attributes\DataProvider;
 use PHPUnit\Framework\TestCase;
 use Phunkie\Console\Types\ReplSession;
 
-use function Phunkie\Console\Functions\{evaluateExpression, cleanErrorMessage};
+use function Phunkie\Console\Functions\{evaluateExpression, cleanErrorMessage, getType};
+use function Phunkie\Functions\type\normaliseType;
 
 class EvaluationTest extends TestCase
 {
@@ -119,6 +121,63 @@ class EvaluationTest extends TestCase
         $this->assertInstanceOf(\Phunkie\Validation\Success::class, $result);
         $evalResult = $result->getOrElse(null);
         $this->assertEquals(15, $evalResult->value);
+    }
+
+    /**
+     * @return list<array{mixed, string}>
+     */
+    public static function scalarValues(): array
+    {
+        return [
+            [null, 'null'],
+            [true, 'bool'],
+            [false, 'bool'],
+            [42, 'int'],
+            [3.14, 'float'],
+            ['hello', 'string'],
+            [[1, 2, 3], 'array'],
+        ];
+    }
+
+    #[DataProvider('scalarValues')]
+    public function testGetTypeTakesItsScalarNamesFromPhunkie(mixed $value, string $nativeType): void
+    {
+        $this->assertSame(normaliseType($nativeType), getType($value));
+    }
+
+    public function testGetTypeNamesBooleansBoolean(): void
+    {
+        $this->assertSame('Boolean', getType(true));
+        $this->assertSame('Boolean', getType(false));
+    }
+
+    public function testGetTypeNamesClosuresCallable(): void
+    {
+        $this->assertSame('Callable', getType(fn(int $x): int => $x));
+    }
+
+    public function testGetTypeNamesGenerators(): void
+    {
+        $generator = (function () {
+            yield 1;
+        })();
+
+        $this->assertSame('Generator', getType($generator));
+    }
+
+    public function testGetTypeDelegatesObjectsToTheirShowType(): void
+    {
+        $this->assertSame('Option<Int>', getType(Some(42)));
+        $this->assertSame('List<Int>', getType(ImmList(1, 2, 3)));
+    }
+
+    public function testEvaluatingBooleanLiteralsYieldsBoolean(): void
+    {
+        $session = ReplSession::empty();
+
+        $this->assertSame('Boolean', evaluateExpression('true', $session)->getOrElse(null)->type);
+        $this->assertSame('Boolean', evaluateExpression('false', $session)->getOrElse(null)->type);
+        $this->assertSame('Boolean', evaluateExpression('1 < 2', $session)->getOrElse(null)->type);
     }
 
     public function testCleanErrorMessageIsAvailable(): void
