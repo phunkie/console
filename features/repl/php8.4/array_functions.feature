@@ -51,35 +51,35 @@ Feature: New Array Functions (PHP 8.4)
     Given I start the REPL
     When I enter "$numbers = [1, 2, 3, 4]"
     And I enter "array_any($numbers, fn($n) => $n > 3)"
-    Then I should see output containing "Bool = true"
+    Then I should see output containing "Boolean = true"
 
   Scenario: array_any() with no matches
     Given I start the REPL
     When I enter "$numbers = [1, 2, 3]"
     And I enter "array_any($numbers, fn($n) => $n > 10)"
-    Then I should see output containing "Bool = false"
+    Then I should see output containing "Boolean = false"
 
   Scenario: array_any() with empty array
     Given I start the REPL
     When I enter "array_any([], fn($n) => true)"
-    Then I should see output containing "Bool = false"
+    Then I should see output containing "Boolean = false"
 
   Scenario: array_all() with all matching
     Given I start the REPL
     When I enter "$numbers = [2, 4, 6, 8]"
     And I enter "array_all($numbers, fn($n) => $n % 2 === 0)"
-    Then I should see output containing "Bool = true"
+    Then I should see output containing "Boolean = true"
 
   Scenario: array_all() with partial match
     Given I start the REPL
     When I enter "$numbers = [2, 3, 4]"
     And I enter "array_all($numbers, fn($n) => $n % 2 === 0)"
-    Then I should see output containing "Bool = false"
+    Then I should see output containing "Boolean = false"
 
   Scenario: array_all() with empty array
     Given I start the REPL
     When I enter "array_all([], fn($n) => false)"
-    Then I should see output containing "Bool = true"
+    Then I should see output containing "Boolean = true"
 
   Scenario: array_all() with associative array
     Given I start the REPL
@@ -92,13 +92,13 @@ Feature: New Array Functions (PHP 8.4)
       ];
       """
     And I enter "array_all($products, fn($p) => $p['stock'] > 5)"
-    Then I should see output containing "Bool = true"
+    Then I should see output containing "Boolean = true"
 
   Scenario: Chaining array functions
     Given I start the REPL
     When I enter "$numbers = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]"
     And I enter "array_any($numbers, fn($n) => $n > 5 && $n % 2 === 0)"
-    Then I should see output containing "Bool = true"
+    Then I should see output containing "Boolean = true"
 
   Scenario: array_find() with object array
     Given I start the REPL

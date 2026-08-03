@@ -199,4 +199,4 @@ Feature: Asymmetric Visibility (PHP 8.4)
       """
     And I enter "$doc = new Document()"
     And I enter "$doc->createdAt > 0"
-    Then I should see output containing "Bool = true"
+    Then I should see output containing "Boolean = true"

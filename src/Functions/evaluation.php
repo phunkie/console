@@ -23,6 +23,7 @@ use Phunkie\Validation\Validation;
 
 use function Success;
 use function Failure;
+use function Phunkie\Functions\type\normaliseType;
 
 /**
  * Pure function to evaluate a PHP expression.
@@ -297,25 +298,25 @@ function evaluateNode(Node $node, ReplSession $session): Validation
 {
     return match (true) {
         $node instanceof Scalar\Int_
-            => Success(EvaluationResult::of($node->value, 'Int')),
+            => Success(EvaluationResult::of($node->value, getType($node->value))),
 
         $node instanceof Scalar\Float_
-            => Success(EvaluationResult::of($node->value, 'Float')),
+            => Success(EvaluationResult::of($node->value, getType($node->value))),
 
         $node instanceof Scalar\String_
-            => Success(EvaluationResult::of($node->value, 'String')),
+            => Success(EvaluationResult::of($node->value, getType($node->value))),
 
         $node instanceof Scalar\InterpolatedString
             => evaluateInterpolatedString($node, $session),
 
         $node instanceof Expr\ConstFetch && $node->name->toString() === 'true'
-            => Success(EvaluationResult::of(true, 'Bool')),
+            => Success(EvaluationResult::of(true, getType(true))),
 
         $node instanceof Expr\ConstFetch && $node->name->toString() === 'false'
-            => Success(EvaluationResult::of(false, 'Bool')),
+            => Success(EvaluationResult::of(false, getType(false))),
 
         $node instanceof Expr\ConstFetch && $node->name->toString() === 'null'
-            => Success(EvaluationResult::of(null, 'Null')),
+            => Success(EvaluationResult::of(null, getType(null))),
 
         $node instanceof Expr\ConstFetch && $node->name->toString() === 'None'
             => Success(EvaluationResult::of(\None(), getType(\None()))),
@@ -1330,22 +1331,22 @@ function evaluateFunctionCall(Expr\FuncCall $node, ReplSession $session): Valida
 /**
  * Gets the type name of a value.
  *
+ * Only the names the REPL invents for itself live here. Every native type is named
+ * by Phunkie's normaliseType(), so the console cannot drift away from the library.
+ * get_debug_type() is what we hand it: it spells native types the way normaliseType()
+ * expects, where gettype() would say "double" and "NULL".
+ *
  * @param mixed $value
  * @return string
  */
 function getType(mixed $value): string
 {
     return match (true) {
-        is_null($value) => 'Null',
-        is_bool($value) => 'Bool',
-        is_int($value) => 'Int',
-        is_float($value) => 'Float',
-        is_string($value) => 'String',
-        is_array($value) => 'Array',
         $value instanceof \Closure => 'Callable',
         $value instanceof \Generator => 'Generator',
         is_object($value) => getObjectType($value),
-        default => 'Unknown'
+        is_resource($value) => normaliseType('resource'),
+        default => normaliseType(get_debug_type($value)),
     };
 }
 
@@ -2242,7 +2243,7 @@ function evaluateInstanceof(Expr\Instanceof_ $node, ReplSession $session): Valid
         // Perform the instanceof check
         $result = $object instanceof $className;
 
-        return Success(EvaluationResult::of($result, 'Bool'));
+        return Success(EvaluationResult::of($result, getType($result)));
     } catch (\Throwable $e) {
         return Failure(new EvaluationError(
             'Instanceof',

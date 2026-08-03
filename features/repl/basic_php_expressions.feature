@@ -16,12 +16,12 @@ Feature: Evaluating Basic PHP Expressions
   Scenario: Boolean AND operation
     Given I start the REPL
     When I enter "true && false"
-    Then I should see output containing "$var0: Bool = false"
+    Then I should see output containing "$var0: Boolean = false"
 
   Scenario: Boolean NOT operation
     Given I start the REPL
     When I enter "!true"
-    Then I should see output containing "$var0: Bool = false"
+    Then I should see output containing "$var0: Boolean = false"
 
   Scenario: Simple variable assignment
     Given I start the REPL
@@ -68,17 +68,17 @@ Feature: Evaluating Basic PHP Expressions
   Scenario: Boolean OR operation
     Given I start the REPL
     When I enter "true || false"
-    Then I should see output containing "$var0: Bool = true"
+    Then I should see output containing "$var0: Boolean = true"
 
   Scenario: Comparison greater than
     Given I start the REPL
     When I enter "5 > 3"
-    Then I should see output containing "$var0: Bool = true"
+    Then I should see output containing "$var0: Boolean = true"
 
   Scenario: Comparison equal
     Given I start the REPL
     When I enter "5 == 5"
-    Then I should see output containing "$var0: Bool = true"
+    Then I should see output containing "$var0: Boolean = true"
 
   Scenario: Unary minus
     Given I start the REPL

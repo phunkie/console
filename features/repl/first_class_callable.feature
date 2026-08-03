@@ -82,4 +82,4 @@ Feature: First-Class Callable Syntax
     When I enter "$f1 = strlen(...)"
     And I enter "$f2 = strlen(...)"
     And I enter "$f1 === $f2"
-    Then I should see output containing "Bool = false"
+    Then I should see output containing "Boolean = false"

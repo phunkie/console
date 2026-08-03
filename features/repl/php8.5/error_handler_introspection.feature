@@ -12,7 +12,7 @@ Feature: Error Handler Introspection (PHP 8.5)
     Given I start the REPL
     When I enter "set_exception_handler(function ($e) { return null; })"
     And I enter "is_callable(get_exception_handler())"
-    Then I should see output containing "Bool = true"
+    Then I should see output containing "Boolean = true"
 
   Scenario: get_exception_handler() is null once the handler is cleared
     Given I start the REPL
@@ -24,4 +24,4 @@ Feature: Error Handler Introspection (PHP 8.5)
   Scenario: PHP_BUILD_DATE is available
     Given I start the REPL
     When I enter "is_string(PHP_BUILD_DATE)"
-    Then I should see output containing "Bool = true"
+    Then I should see output containing "Boolean = true"

@@ -6,22 +6,22 @@ Feature: PHP 8.3 Built-in Functions
   Scenario: json_validate() with valid JSON
     Given I start the REPL
     When I enter "json_validate('{\"name\": \"test\", \"value\": 123}')"
-    Then I should see output containing "Bool = true"
+    Then I should see output containing "Boolean = true"
 
   Scenario: json_validate() with invalid JSON
     Given I start the REPL
     When I enter "json_validate('{invalid json}')"
-    Then I should see output containing "Bool = false"
+    Then I should see output containing "Boolean = false"
 
   Scenario: json_validate() with empty string
     Given I start the REPL
     When I enter "json_validate('')"
-    Then I should see output containing "Bool = false"
+    Then I should see output containing "Boolean = false"
 
   Scenario: json_validate() with valid array JSON
     Given I start the REPL
     When I enter "json_validate('[1, 2, 3, 4]')"
-    Then I should see output containing "Bool = true"
+    Then I should see output containing "Boolean = true"
 
   Scenario: mb_str_pad() basic padding
     Given I start the REPL
@@ -49,11 +49,11 @@ Feature: PHP 8.3 Built-in Functions
     When I enter "$r = new \Random\Randomizer()"
     And I enter "$f = $r->getFloat(0, 1)"
     And I enter "$f >= 0 && $f < 1"
-    Then I should see output containing "Bool = true"
+    Then I should see output containing "Boolean = true"
 
   Scenario: Randomizer::nextFloat()
     Given I start the REPL
     When I enter "$r = new \Random\Randomizer()"
     And I enter "$f = $r->nextFloat()"
     And I enter "$f >= 0 && $f < 1"
-    Then I should see output containing "Bool = true"
+    Then I should see output containing "Boolean = true"

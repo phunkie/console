@@ -42,4 +42,4 @@ Feature: Evaluating Phunkie Data Structures
     Given I start the REPL
     When I enter "None"
     And I enter "$var0->isEmpty()"
-    Then I should see output containing "$var1: Bool = true"
+    Then I should see output containing "$var1: Boolean = true"
